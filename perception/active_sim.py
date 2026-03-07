@@ -141,6 +141,7 @@ class ActivePerception:
 
         # Collect sim body names for sim-mode tagging
         sim_body_names = self._get_sim_object_names() if self._is_sim else None
+        sim_body_positions = self._get_sim_object_positions() if self._is_sim else None
 
         # Render and perceive each camera
         for cam in cameras:
@@ -152,6 +153,7 @@ class ActivePerception:
                 rgb, depth, intrinsics,
                 camera_extrinsics=extrinsics,
                 sim_body_names=sim_body_names,
+                sim_body_positions=sim_body_positions,
             )
 
         # Update robot state
@@ -213,7 +215,7 @@ class ActivePerception:
             "grasped_object": self.robot_state.grasped_object,
             "is_stable": self.robot_state.is_stable,
         }
-        return json.dumps(data, indent=2)
+        return json.dumps(self._to_native_types(data), indent=2)
 
     def query_object(self, label: str) -> Optional[SceneObject]:
         return self.pipeline.scene_graph.query(label)
@@ -299,6 +301,27 @@ class ActivePerception:
                 names.append(name)
         return names
 
+    def _get_sim_object_positions(self) -> Dict[str, np.ndarray]:
+        """Get world positions for all sim objects keyed by MuJoCo body name."""
+        positions = {}
+        for name in self._get_sim_object_names():
+            bid = mujoco.mj_name2id(self._model, mujoco.mjtObj.mjOBJ_BODY, name)
+            if bid >= 0:
+                positions[name] = self._data.xpos[bid].copy()
+        return positions
+
+    def _to_native_types(self, value):
+        """Convert numpy scalars/arrays recursively so json.dumps always succeeds."""
+        if isinstance(value, np.generic):
+            return value.item()
+        if isinstance(value, np.ndarray):
+            return value.tolist()
+        if isinstance(value, dict):
+            return {k: self._to_native_types(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [self._to_native_types(v) for v in value]
+        return value
+
     def _update_robot_state(self):
         if self._bridge is None:
             return
@@ -313,8 +336,8 @@ class ActivePerception:
         self.robot_state.base_height = float(pos[2])
         self.robot_state.right_hand_pos = b.get_ee_pos("right").tolist()
         self.robot_state.left_hand_pos = b.get_ee_pos("left").tolist()
-        self.robot_state.is_stable = pos[2] > 0.5
+        self.robot_state.is_stable = bool(pos[2] > 0.5)
 
         if self._grasp:
-            self.robot_state.is_grasping = self._grasp.is_grasping("right")
+            self.robot_state.is_grasping = bool(self._grasp.is_grasping("right"))
             self.robot_state.grasped_object = self._grasp.get_grasped_object("right")

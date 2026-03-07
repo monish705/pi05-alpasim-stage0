@@ -216,7 +216,7 @@ class ArmController:
                 for i, idx in enumerate(self._wb_indices):
                     self.data.ctrl[idx] -= self._last_dq[i] if hasattr(self, '_last_dq') else 0
                 for _ in range(10):
-                    mujoco.mj_step(self.model, self.data)
+                    self.bridge.step(1)
                 mujoco.mj_forward(self.model, self.data)
 
                 return {
@@ -259,7 +259,7 @@ class ArmController:
 
             # Step simulation (multiple sub-steps for PD tracking)
             for _ in range(5):
-                mujoco.mj_step(self.model, self.data)
+                self.bridge.step(1)
 
             # Self-collision check
             if self.data.ncon > 30:  # more contacts than expected

@@ -92,7 +92,8 @@ class PerceptionPipeline:
                  camera_params: Dict[str, float],
                  camera_extrinsics: np.ndarray = None,
                  prompts: list = None,
-                 sim_body_names: list = None) -> SceneGraph:
+                 sim_body_names: list = None,
+                 sim_body_positions: Dict[str, np.ndarray] = None) -> SceneGraph:
         """
         Run full perception on a single frame.
 
@@ -103,6 +104,8 @@ class PerceptionPipeline:
             camera_extrinsics: optional (4, 4) camera-to-world transform matrix
             prompts: optional list of text prompts for SAM3
             sim_body_names: optional list of MuJoCo body names for sim-mode tagging
+            sim_body_positions: optional mapping of sim body name -> world position
+                                for geometry-based label association
 
         Returns:
             Updated SceneGraph with all detected objects
@@ -134,6 +137,7 @@ class PerceptionPipeline:
         # Stage 4: Depth Validation + Confidence + Assembly
         print("[Pipeline] Stage 4: Depth Validation + Assembly...")
         new_objects = []
+        sim_positions_remaining = dict(sim_body_positions) if sim_body_positions else None
 
         for i, (seg, recon, tag) in enumerate(zip(segments, reconstructions, tags)):
             # Get 3D position
@@ -159,6 +163,18 @@ class PerceptionPipeline:
                 corrected_pos = self._camera_to_world(
                     corrected_pos, camera_extrinsics
                 )
+
+            if sim_positions_remaining:
+                match_name = self._match_sim_object(
+                    corrected_pos,
+                    sim_positions_remaining,
+                    max_distance_m=0.25,
+                )
+                if match_name is not None:
+                    tag = self.tagger.tag_from_sim_name(match_name)
+                    sim_positions_remaining.pop(match_name, None)
+                else:
+                    tag = self.tagger.tag_from_sim_name(None)
 
             # Measure dimensions from depth
             depth_dims = self.depth_validator.measure_object_dimensions(
@@ -207,6 +223,26 @@ class PerceptionPipeline:
         self.scene_graph.print_all()
 
         return self.scene_graph
+
+    @staticmethod
+    def _match_sim_object(position_world: np.ndarray,
+                          sim_body_positions: Dict[str, np.ndarray],
+                          max_distance_m: float = 0.25) -> Optional[str]:
+        """Nearest-neighbor match from detected position to known sim objects."""
+        if not sim_body_positions:
+            return None
+
+        pos = np.array(position_world, dtype=np.float64)
+        best_name = None
+        best_dist = float("inf")
+        for name, sim_pos in sim_body_positions.items():
+            dist = float(np.linalg.norm(pos - np.array(sim_pos, dtype=np.float64)))
+            if dist < best_dist:
+                best_dist = dist
+                best_name = name
+        if best_dist <= max_distance_m:
+            return best_name
+        return None
 
     def _compute_confidence(self, seg_score: float,
                             recon_success: bool,

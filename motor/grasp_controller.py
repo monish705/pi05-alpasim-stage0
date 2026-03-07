@@ -46,6 +46,8 @@ class GraspController:
         self._graspable_objects = self._find_graspable_objects()
 
         print(f"[Grasp] Initialised: {len(self._graspable_objects)} graspable objects")
+        if len(self._graspable_objects) == 0:
+            print("[Grasp] ⚠️  No graspable objects in scene (no bodies with freejoints)")
         for name in self._graspable_objects:
             print(f"  - {name}")
 

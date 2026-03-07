@@ -164,8 +164,6 @@ class SAM3Segmentor:
         Groups pixels with similar depth into object clusters.
         No ML required — works on CPU.
         """
-        from scipy import ndimage
-
         img_array = np.array(image)
         h, w = depth.shape[:2]
 
@@ -186,7 +184,11 @@ class SAM3Segmentor:
             return []
 
         # Connected components on foreground mask
-        labeled, n_labels = ndimage.label(foreground)
+        try:
+            from scipy import ndimage
+            labeled, n_labels = ndimage.label(foreground)
+        except ImportError:
+            labeled, n_labels = self._connected_components(foreground)
 
         results = []
         for label_id in range(1, n_labels + 1):
@@ -219,6 +221,39 @@ class SAM3Segmentor:
             ))
 
         return results
+
+    @staticmethod
+    def _connected_components(mask: np.ndarray) -> tuple[np.ndarray, int]:
+        """
+        Pure-numpy 8-connected component labeling fallback used when scipy
+        is unavailable.
+        """
+        h, w = mask.shape
+        labels = np.zeros((h, w), dtype=np.int32)
+        current = 0
+
+        for y in range(h):
+            for x in range(w):
+                if not mask[y, x] or labels[y, x] != 0:
+                    continue
+
+                current += 1
+                labels[y, x] = current
+                stack = [(y, x)]
+
+                while stack:
+                    cy, cx = stack.pop()
+                    y0 = max(cy - 1, 0)
+                    y1 = min(cy + 1, h - 1)
+                    x0 = max(cx - 1, 0)
+                    x1 = min(cx + 1, w - 1)
+                    for ny in range(y0, y1 + 1):
+                        for nx in range(x0, x1 + 1):
+                            if mask[ny, nx] and labels[ny, nx] == 0:
+                                labels[ny, nx] = current
+                                stack.append((ny, nx))
+
+        return labels, current
 
     def _deduplicate(self, results: List[SegmentationResult],
                      iou_threshold: float = 0.5) -> List[SegmentationResult]:

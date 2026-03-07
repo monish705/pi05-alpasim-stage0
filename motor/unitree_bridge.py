@@ -74,6 +74,14 @@ class UnitreeBridge:
 
         print(f"[Bridge] Initialised: {len(self._joint_ids)} joints, "
               f"{len(self._actuator_ids)} actuators, {len(self._body_ids)} bodies")
+        self.pre_step_hooks = []
+
+    def step(self, n_substeps: int = 1):
+        """Step the MuJoCo simulation, running all pre-step hooks (e.g., GraspController.update)."""
+        for _ in range(n_substeps):
+            for hook in self.pre_step_hooks:
+                hook()
+            mujoco.mj_step(self.model, self.data)
 
     # ---- Joint Control ----
 

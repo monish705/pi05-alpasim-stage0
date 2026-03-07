@@ -17,6 +17,8 @@ import numpy as np
 import mujoco
 import os
 import yaml
+import math
+import sys
 from typing import Optional, Tuple
 
 try:
@@ -81,7 +83,11 @@ class LocomotionController:
         self.vy_range = vel_ranges['lin_vel_y']  # [-0.5, 0.5]
         self.wz_range = vel_ranges['ang_vel_z']  # [-1.0, 1.0]
 
-        # State
+        # State for continuous simulation
+        self.cmd_vx = 0.0
+        self.cmd_vy = 0.0
+        self.cmd_wz = 0.0
+        self.step_counter = 0
         self.last_action = np.zeros(self.n_joints, dtype=np.float32)
 
         # Load ONNX policy
@@ -104,6 +110,30 @@ class LocomotionController:
             print(f"[Loco] ⚠️ ONNX policy not found at {_ONNX_PATH}")
             print(f"       Using fallback velocity controller")
             self._has_policy = False
+
+    def update(self):
+        """Continuous hook called by the bridge/server every physics step."""
+        if self.step_counter % self.decimation == 0:
+            if self._has_policy:
+                obs = self._build_obs(self.cmd_vx, self.cmd_vy, self.cmd_wz)
+                action = self.session.run([self.output_name], {self.input_name: obs})[0].flatten()
+                self.last_action = action.astype(np.float32)
+                targets = action * self.action_scale + self.action_offset
+                for i, jid in enumerate(self.joint_ids):
+                    self.data.ctrl[jid] = targets[i]
+            else:
+                self._fallback_inference()
+        self.step_counter += 1
+
+    def _fallback_inference(self):
+        """Fallback: direct velocity injection."""
+        cx, cy, cyaw = self._get_base_xytheta()
+        cos_yaw = np.cos(cyaw)
+        sin_yaw = np.sin(cyaw)
+        self.data.qvel[0] = self.cmd_vx * cos_yaw - self.cmd_vy * sin_yaw
+        self.data.qvel[1] = self.cmd_vx * sin_yaw + self.cmd_vy * cos_yaw
+        self.data.qvel[2] = 0.0
+        self.data.qvel[5] = self.cmd_wz
 
     def _apply_training_pd_gains(self):
         """
@@ -167,42 +197,7 @@ class LocomotionController:
         ])
         return obs.reshape(1, -1).astype(np.float32)
 
-    # ---- Policy Inference ----
-
-    def _policy_step(self, cmd_vx: float, cmd_vy: float, cmd_wz: float):
-        """Run one policy inference step and apply actions."""
-        obs = self._build_obs(cmd_vx, cmd_vy, cmd_wz)
-
-        # Run ONNX inference
-        action = self.session.run(
-            [self.output_name],
-            {self.input_name: obs}
-        )[0].flatten()
-
-        self.last_action = action.astype(np.float32)
-
-        # Convert to joint position targets: target = action * scale + offset
-        targets = action * self.action_scale + self.action_offset
-
-        # Apply to actuators
-        for i, jid in enumerate(self.joint_ids):
-            self.data.ctrl[jid] = targets[i]
-
-        # Simulate for decimation steps
-        for _ in range(self.decimation):
-            mujoco.mj_step(self.model, self.data)
-
-    def _fallback_step(self, cmd_vx: float, cmd_vy: float, cmd_wz: float):
-        """Fallback: direct velocity injection (for when ONNX isn't available)."""
-        cx, cy, cyaw = self._get_base_xytheta()
-        cos_yaw = np.cos(cyaw)
-        sin_yaw = np.sin(cyaw)
-        self.data.qvel[0] = cmd_vx * cos_yaw - cmd_vy * sin_yaw
-        self.data.qvel[1] = cmd_vx * sin_yaw + cmd_vy * cos_yaw
-        self.data.qvel[2] = 0.0
-        self.data.qvel[5] = cmd_wz
-        for _ in range(self.decimation):
-            mujoco.mj_step(self.model, self.data)
+    # ---- Policy Inference (internal, called only by update() hook) ----
 
     # ---- High-Level Commands ----
 
@@ -216,45 +211,38 @@ class LocomotionController:
     def walk_velocity(self, vx: float, vy: float, wz: float, duration_s: float = 1.0):
         """
         Send velocity command for a duration.
-
-        Args:
-            vx: forward velocity (m/s), range [-0.5, 1.0]
-            vy: lateral velocity (m/s), range [-0.5, 0.5]
-            wz: yaw rate (rad/s), range [-1.0, 1.0]
-            duration_s: how long to execute (seconds)
         """
-        vx = np.clip(vx, self.vx_range[0], self.vx_range[1])
-        vy = np.clip(vy, self.vy_range[0], self.vy_range[1])
-        wz = np.clip(wz, self.wz_range[0], self.wz_range[1])
+        self.cmd_vx = np.clip(vx, self.vx_range[0], self.vx_range[1])
+        self.cmd_vy = np.clip(vy, self.vy_range[0], self.vy_range[1])
+        self.cmd_wz = np.clip(wz, self.wz_range[0], self.wz_range[1])
 
-        n_steps = int(duration_s / self.step_dt)
-        step_fn = self._policy_step if self._has_policy else self._fallback_step
-
-        for _ in range(n_steps):
-            step_fn(vx, vy, wz)
-
+        # Step global simulation
+        n_sim_steps = int(duration_s / self.sim_dt)
+        for _ in range(n_sim_steps):
+            self.bridge.step(1)
+            
+        self.cmd_vx = 0.0
+        self.cmd_vy = 0.0
+        self.cmd_wz = 0.0
+    
     def walk_to(self, target_x: float, target_y: float,
-                target_theta: Optional[float] = None,
-                tolerance: float = 0.15,
-                max_duration_s: float = 15.0) -> dict:
+                 target_theta: Optional[float] = None,
+                 tolerance: float = 0.3,
+                 max_duration_s: float = 20.0) -> dict:
         """
-        Walk to a target position using the RL velocity policy.
-
-        Args:
-            target_x, target_y: target in world frame
-            tolerance: arrival distance (m)
-            max_duration_s: timeout (seconds)
-
-        Returns:
-            dict with 'success', 'final_distance', 'steps', 'positions'
+        Walk to a target position using Artificial Potential Fields for navigation.
+        This is the 'Control Layer' that handles obstacle avoidance.
         """
         target = np.array([target_x, target_y])
         positions = []
         n_max = int(max_duration_s / self.step_dt)
-        step_fn = self._policy_step if self._has_policy else self._fallback_step
+        kp_lin = 1.2
+        kp_ang = 1.5
 
-        kp_lin = 1.5
-        kp_ang = 2.0
+        # Stall detection state
+        last_stall_check_pos = None
+        stall_step = 0
+        stall_penalty_dir = 1.0  # alternates +1/-1 to bias curl direction on escape
 
         for step in range(n_max):
             mujoco.mj_forward(self.model, self.data)
@@ -264,65 +252,101 @@ class LocomotionController:
             positions.append(current.copy())
 
             if dist < tolerance:
-                # Stop
-                step_fn(0.0, 0.0, 0.0)
-                print(f"[Loco] ✅ Arrived in {step} policy steps "
-                      f"({step * self.step_dt:.1f}s, dist={dist:.3f}m)")
-                return {
-                    "success": True,
-                    "final_distance": dist,
-                    "steps": step,
-                    "positions": positions,
-                }
+                self.cmd_vx = 0.0
+                self.cmd_vy = 0.0
+                self.cmd_wz = 0.0
+                print(f"[Loco] ✅ Arrived dist={dist:.3f}m")
+                return {"success": True, "final_distance": dist, "steps": step, "positions": positions}
 
-            # Direction to target in world frame
-            dx = target[0] - cx
-            dy = target[1] - cy
-            angle_to_target = np.arctan2(dy, dx)
+            # --- Stall detection: if <3cm moved in 100 steps, escape ---
+            if step > 0 and step % 100 == 0:
+                if last_stall_check_pos is not None:
+                    moved = np.linalg.norm(current - last_stall_check_pos)
+                    # ONLY stall if trying to move forward. Avoid false positives when intentionally turning in place.
+                    if moved < 0.05 and self.cmd_vx > 0.05:
+                        stall_step += 1
+                        print(f"[Loco] ⚠️ Stall #{stall_step} at ({cx:.2f},{cy:.2f}), moved only {moved:.3f}m — escaping (dir={stall_penalty_dir:+.0f})")
+                        # Back up briefly
+                        self.cmd_vx = -0.3
+                        self.cmd_wz = 0.0
+                        for _ in range(int(0.8 / self.sim_dt)):
+                            self.bridge.step(1)
+                        # Turn opposite to curl bias so we try the other side
+                        self.cmd_vx = 0.0
+                        self.cmd_wz = 0.7 * stall_penalty_dir
+                        for _ in range(int(0.6 / self.sim_dt)):
+                            self.bridge.step(1)
+                        stall_penalty_dir *= -1.0  # flip direction for next stall
+                last_stall_check_pos = current.copy()
 
-            # Angle error
-            angle_error = angle_to_target - cyaw
-            angle_error = (angle_error + np.pi) % (2 * np.pi) - np.pi
+            # --- APF Navigation (Control Layer) ---
+            K_att = 1.0
+            K_rep = 0.3
+            K_curl = 0.8     # Stronger curl to actually slide around walls
+            D_thresh = 0.3   # Reduced from 0.6 — was overlapping in narrow gaps
 
-            # Velocity commands in robot frame
-            if abs(angle_error) > 0.4:
-                # Turn in place first
-                cmd_vx = 0.0
-                cmd_vy = 0.0
-                cmd_wz = np.clip(kp_ang * angle_error, *self.wz_range)
+            F_att_x = K_att * (target_x - cx)
+            F_att_y = K_att * (target_y - cy)
+            F_x, F_y = F_att_x, F_att_y
+
+            for i in range(self.model.ngeom):
+                name = mujoco.mj_id2name(self.model, mujoco.mjtObj.mjOBJ_GEOM, i)
+                if name and ("wall" in name or "block" in name):
+                    g_pos = self.data.geom_xpos[i]
+                    g_size = self.model.geom_size[i]
+                    nx = np.clip(cx, g_pos[0]-g_size[0], g_pos[0]+g_size[0])
+                    ny = np.clip(cy, g_pos[1]-g_size[1], g_pos[1]+g_size[1])
+                    dx_g, dy_g = cx - nx, cy - ny
+                    dist_g = math.hypot(dx_g, dy_g)
+
+                    if dist_g < D_thresh and dist_g > 0.01:
+                        rep_mag = K_rep * (1.0/dist_g - 1.0/D_thresh) / (dist_g**2)
+                        F_x += rep_mag * (dx_g/dist_g)
+                        F_y += rep_mag * (dy_g/dist_g)
+                        # Vortex/Curl to slide around. Bias alternates on stall escape.
+                        cross_p = dx_g * F_att_y - dy_g * F_att_x
+                        curl_dir = (1.0 if cross_p > 0 else -1.0) * stall_penalty_dir
+                        F_x += curl_dir * K_curl * rep_mag * (-dy_g/dist_g)
+                        F_y += curl_dir * K_curl * rep_mag * (dx_g/dist_g)
+
+            angle_to_target = math.atan2(F_y, F_x)
+            angle_error = (angle_to_target - cyaw + math.pi) % (2*math.pi) - math.pi
+
+            # KEY FIX: stop moving forward if needing to turn around drastically
+            if abs(angle_error) > 0.8:
+                # Needs to turn around (repelled by wall). Do NOT move forward. safely turn.
+                self.cmd_vx = 0.0
+                self.cmd_wz = float(np.clip(kp_ang * angle_error, -0.8, 0.8))
+            elif abs(angle_error) > 0.6:
+                # Moderate turn. Creep forward very slowly.
+                self.cmd_vx = 0.1
+                self.cmd_wz = float(np.clip(kp_ang * angle_error, -0.6, 0.6))
+            elif abs(angle_error) > 0.2:
+                # Medium: moderate turn + moderate speed
+                self.cmd_vx = float(np.clip(kp_lin * dist * 0.5, 0.15, 0.5))
+                self.cmd_wz = float(np.clip(kp_ang * angle_error, -0.5, 0.5))
             else:
-                # Forward with correction
-                cmd_vx = np.clip(kp_lin * dist, 0, self.vx_range[1])
-                cmd_vy = 0.0
-                cmd_wz = np.clip(kp_ang * angle_error, *self.wz_range)
+                # Heading on target: full speed, small correction
+                self.cmd_vx = float(np.clip(kp_lin * dist, 0.0, 0.8))
+                self.cmd_wz = float(np.clip(kp_ang * angle_error, -0.3, 0.3))
 
-            step_fn(cmd_vx, cmd_vy, cmd_wz)
+            # Step simulation via bridge (which handles the continuous update hook)
+            for _ in range(self.decimation):
+                self.bridge.step(1)
 
-            # Stability check
-            base_z = self.bridge.get_base_pos()[2]
-            if base_z < 0.4:
-                print(f"[Loco] ❌ Robot fell (z={base_z:.3f}m) at step {step}")
-                return {
-                    "success": False,
-                    "final_distance": dist,
-                    "steps": step,
-                    "positions": positions,
-                }
+            if self.bridge.get_base_pos()[2] < 0.5:
+                print(f"[Loco] ❌ Fell at step {step}")
+                return {"success": False, "final_distance": dist, "steps": step, "positions": positions}
 
             if step % 50 == 0:
-                print(f"  [step {step}] pos=({cx:.3f},{cy:.3f}) "
-                      f"dist={dist:.3f}m cmd=({cmd_vx:.2f},{cmd_vy:.2f},{cmd_wz:.2f})")
+                print(f"  [step {step}] pos=({cx:.3f},{cy:.3f}) dist={dist:.3f}m aerr={angle_error:.2f} cmd=({self.cmd_vx:.2f},{self.cmd_wz:.2f})")
 
-        final_dist = np.linalg.norm(target - self.bridge.get_base_pos()[:2])
-        print(f"[Loco] ⚠️ Timeout ({max_duration_s}s), dist={final_dist:.3f}m")
-        return {
-            "success": False,
-            "final_distance": final_dist,
-            "steps": n_max,
-            "positions": positions,
-        }
+        self.cmd_vx = 0.0
+        self.cmd_wz = 0.0
+        return {"success": False, "final_distance": dist, "steps": n_max, "positions": positions}
 
     def stand_still(self, duration_s: float = 2.0):
         """Hold zero velocity for a duration."""
         self.walk_velocity(0.0, 0.0, 0.0, duration_s)
         print(f"[Loco] Standing at {self.bridge.get_base_pos()}")
+

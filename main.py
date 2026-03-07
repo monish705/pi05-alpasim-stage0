@@ -36,6 +36,23 @@ SCENE_XML = os.path.join(
 )
 
 
+def _configure_stdio():
+    """
+    Force UTF-8 output when possible so Windows cp1252 consoles do not crash
+    on status symbols printed across the stack.
+    """
+    try:
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        if hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+
+_configure_stdio()
+
+
 class EmbodiedAISystem:
     """
     Full Embodied AI Pipeline:
@@ -62,6 +79,8 @@ class EmbodiedAISystem:
         self.loco = LocomotionController(self.bridge)
         self.arm = ArmController(self.bridge, hand="right")
         self.grasp = GraspController(self.bridge)
+        self.bridge.pre_step_hooks.append(self.loco.update)
+        self.bridge.pre_step_hooks.append(self.grasp.update)
 
         # 3. Active perception (same code works for sim + real robot)
         print("[3/5] Starting active perception...")
@@ -216,6 +235,8 @@ class EmbodiedAISystem:
 
 
 def main():
+    _configure_stdio()
+
     parser = argparse.ArgumentParser(description="Unitree G1 Embodied AI")
     parser.add_argument("--command", type=str, help="Single command to execute")
     parser.add_argument("--offline", action="store_true",
