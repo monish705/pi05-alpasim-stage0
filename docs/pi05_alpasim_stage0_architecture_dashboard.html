@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PI0.5 Stage 0 Architecture Dashboard</title>
+  <style>
+    :root {
+      --bg: #09111b;
+      --panel: #101a2d;
+      --panel2: #15223a;
+      --line: #273a5d;
+      --text: #eef4ff;
+      --muted: #9db1d4;
+      --blue: #77b1ff;
+      --green: #34c07d;
+      --amber: #efb25d;
+      --red: #ef7474;
+      --teal: #4fd4c8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top right, rgba(80,130,255,0.16), transparent 28%),
+        linear-gradient(180deg, #08111c 0%, #0a1321 100%);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, sans-serif;
+      line-height: 1.5;
+    }
+    .wrap {
+      width: min(1280px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 24px 0 56px;
+    }
+    .hero, .panel, .card {
+      background: rgba(16, 26, 45, 0.94);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.24);
+    }
+    .hero, .panel, .card { padding: 18px; }
+    .hero { margin-bottom: 16px; }
+    h1, h2, h3 { margin: 0 0 10px; line-height: 1.15; }
+    h1 { font-size: 34px; }
+    h2 { font-size: 24px; }
+    h3 { font-size: 17px; }
+    p { margin: 0; }
+    .muted { color: var(--muted); }
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .grid { display: grid; gap: 14px; }
+    .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .cards { margin-top: 14px; }
+    .metric {
+      font-size: 30px;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+    .blue { color: var(--blue); }
+    .green { color: var(--green); }
+    .amber { color: var(--amber); }
+    .red { color: var(--red); }
+    .teal { color: var(--teal); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 9px 8px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    code, pre {
+      font-family: ui-monospace, Consolas, monospace;
+    }
+    pre {
+      margin: 0;
+      background: #0a1324;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 13px;
+    }
+    a { color: #9fc9ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ul { margin: 0; padding-left: 18px; }
+    li { margin: 6px 0; }
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .step {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 150px;
+    }
+    .step .num {
+      display: inline-flex;
+      width: 28px;
+      height: 28px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: rgba(119,177,255,0.16);
+      color: var(--blue);
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .bars { display: grid; gap: 10px; }
+    .bar {
+      display: grid;
+      grid-template-columns: 160px 1fr 110px;
+      gap: 10px;
+      align-items: center;
+      font-size: 13px;
+    }
+    .track {
+      height: 18px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+      background: #091424;
+    }
+    .fill {
+      height: 100%;
+      border-radius: 999px;
+    }
+    .callout {
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+    .callout.good { border-left: 4px solid var(--green); }
+    .callout.warn { border-left: 4px solid var(--amber); }
+    .callout.bad { border-left: 4px solid var(--red); }
+    .tight p + p { margin-top: 8px; }
+    @media (max-width: 1100px) {
+      .step-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 980px) {
+      .g2, .g3, .g4 { grid-template-columns: 1fr; }
+      .bar { grid-template-columns: 1fr; }
+      h1 { font-size: 29px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="eyebrow">Architecture Dashboard</div>
+      <h1>PI0.5 Stage 0: Actual Model, Training Pipeline, and Runtime Wiring</h1>
+      <p class="muted">This page is grounded only in the files and artifacts in this workspace: the Stage 0 dataset builder, OpenPI JAX config wrapper, normalization job, feasibility bridge, AlpaSim external driver, and the saved rerun/ablation artifacts. It does not invent a custom reward or a custom loss if none was actually implemented.</p>
+      <div class="grid g4 cards">
+        <div class="card">
+          <div class="muted">Base Model</div>
+          <div class="metric blue">PI0.5</div>
+          <div class="muted"><code>gemma_2b_lora</code> vision-language backbone + <code>gemma_300m_lora</code> action expert</div>
+        </div>
+        <div class="card">
+          <div class="muted">Training Mode</div>
+          <div class="metric teal">LoRA</div>
+          <div class="muted">OpenPI JAX train path, supervised fine-tune, no custom RL reward file in this workspace</div>
+        </div>
+        <div class="card">
+          <div class="muted">Action Shape</div>
+          <div class="metric">50 x 32</div>
+          <div class="muted">Only dims 0-2 are semantically active: <code>delta_s</code>, <code>delta_yaw</code>, <code>target_speed</code></div>
+        </div>
+        <div class="card">
+          <div class="muted">Best Full-Input Run</div>
+          <div class="metric green">A</div>
+          <div class="muted">3 live cameras, 101 policy calls, collision-free rollout completion</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Source of Truth</h2>
+      <div class="grid g2">
+        <div>
+          <table>
+            <tr><th>Area</th><th>Actual file used</th></tr>
+            <tr><td>Constants / contracts</td><td><a href="C:\Users\brind\Documents\New project\ops\pi05_alpasim_stage0\contracts.py">contracts.py</a></td></tr>
+            <tr><td>Dataset conversion</td><td><a href="C:\Users\brind\Documents\New project\ops\pi05_alpasim_stage0\build_stage0_dataset.py">build_stage0_dataset.py</a></td></tr>
+            <tr><td>Scene selection</td><td><a href="C:\Users\brind\Documents\New project\ops\pi05_alpasim_stage0\select_stage0_candidates.py">select_stage0_candidates.py</a></td></tr>
+            <tr><td>OpenPI config wrapper</td><td><a href="C:\Users\brind\Documents\New project\ops\pi05_alpasim_stage0\openpi_stage0.py">openpi_stage0.py</a></td></tr>
+            <tr><td>Training launcher</td><td><a href="C:\Users\brind\Documents\New project\ops\pi05_alpasim_stage0\train_stage0.py">train_stage0.py</a></td></tr>
+            <tr><td>Normalization</td><td><a href="C:\Users\brind\Documents\New project\ops\pi05_alpasim_stage0\compute_stage0_norm_stats.py">compute_stage0_norm_stats.py</a></td></tr>
+            <tr><td>Feasibility bridge</td><td><a href="C:\Users\brind\Documents\New project\ops\pi05_alpasim_stage0\bridge.py">bridge.py</a></td></tr>
+            <tr><td>AlpaSim driver</td><td><a href="C:\Users\brind\Documents\New project\alpasim_pi05_driver\alpasim_pi05_driver\pi05_stage0_model.py">pi05_stage0_model.py</a></td></tr>
+            <tr><td>Eval driver config</td><td><a href="C:\Users\brind\Documents\New project\artifacts\stage0_rerun_A_complete\configs\stage0_pi05_A.yaml">stage0_pi05_A.yaml</a></td></tr>
+            <tr><td>Condition A metrics</td><td><a href="C:\Users\brind\Documents\New project\artifacts\stage0_rerun_A_complete\RERUN_SUMMARY.txt">RERUN_SUMMARY.txt</a></td></tr>
+          </table>
+        </div>
+        <div class="tight">
+          <div class="callout good">
+            <strong>What is custom here</strong>
+            <p>Dataset conversion, Stage 0 observation repacking, prompt/state/route wiring, local normalization stats, trajectory bridge and clamps, AlpaSim external-driver integration, per-call trace/dump logging.</p>
+          </div>
+          <div class="callout warn" style="margin-top:12px">
+            <strong>What is inherited</strong>
+            <p>The core PI0.5 model family and the OpenPI JAX training script. This workspace wraps OpenPI’s train path; it does not implement a new foundation-model backbone from scratch.</p>
+          </div>
+          <div class="callout bad" style="margin-top:12px">
+            <strong>What is not present</strong>
+            <p>No custom reward-learning loop, no PPO-style RL file, and no custom objective override were found in the Stage 0 project files. This experiment was a supervised LoRA fine-tune plus inference-time feasibility filtering.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Core Model Configuration Actually Used</h2>
+      <div class="grid g2">
+        <div>
+          <table>
+            <tr><th>Field</th><th>Actual value</th></tr>
+            <tr><td>Model family</td><td><code>pi0.5</code></td></tr>
+            <tr><td>Base weights</td><td><code>gs://openpi-assets/checkpoints/pi05_base/params</code></td></tr>
+            <tr><td>PaliGemma variant</td><td><code>gemma_2b_lora</code></td></tr>
+            <tr><td>Action expert variant</td><td><code>gemma_300m_lora</code></td></tr>
+            <tr><td>Action horizon</td><td><code>50</code></td></tr>
+            <tr><td>Action dim</td><td><code>32</code></td></tr>
+            <tr><td>Token limit</td><td><code>1024</code></td></tr>
+            <tr><td>Freeze strategy</td><td>OpenPI <code>get_freeze_filter()</code> from the PI0.5 config wrapper</td></tr>
+            <tr><td>EMA</td><td><code>None</code></td></tr>
+            <tr><td>Weights fine-tuned</td><td>LoRA adapters on the configured PI0.5 stack, not a full from-scratch model</td></tr>
+          </table>
+        </div>
+        <div>
+          <pre>Source: openpi_stage0.make_stage0_train_config(...)
+
+model = Pi0Config(
+  pi05=True,
+  paligemma_variant="gemma_2b_lora",
+  action_expert_variant="gemma_300m_lora",
+  action_dim=32,
+  action_horizon=50,
+  max_token_len=1024,
+)
+
+weight_loader = CheckpointWeightLoader(
+  "gs://openpi-assets/checkpoints/pi05_base/params"
+)</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>What the Model Sees and Predicts</h2>
+      <div class="grid g3">
+        <div class="card">
+          <h3>Visual Inputs</h3>
+          <ul>
+            <li><code>camera_front_wide_120fov</code></li>
+            <li><code>camera_cross_left_120fov</code></li>
+            <li><code>camera_cross_right_120fov</code></li>
+            <li>Driver remaps them into OpenPI image slots:
+              <code>base_0_rgb</code>,
+              <code>left_wrist_0_rgb</code>,
+              <code>right_wrist_0_rgb</code>
+            </li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Structured Inputs</h3>
+          <ul>
+            <li><code>1.0 s</code> ego history at <code>10 Hz</code></li>
+            <li>Per-step features: speed, yaw rate, acceleration</li>
+            <li>State history flattened to <code>30</code> dims</li>
+            <li>Route corridor: <code>32 x 2</code> future ego-frame points</li>
+            <li>Prompt token: <code>lane_follow</code>, <code>left_turn</code>, or <code>right_turn</code></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Action Semantics</h3>
+          <ul>
+            <li>Internal tensor preserved at <code>50 x 32</code></li>
+            <li>Only active dims:
+              <code>0 = delta_s</code>,
+              <code>1 = delta_yaw</code>,
+              <code>2 = target_speed</code>
+            </li>
+            <li>Other 29 dims are present structurally but ignored semantically by this Stage 0 bridge</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Training Pipeline Actually Used</h2>
+      <div class="step-grid">
+        <div class="step">
+          <div class="num">1</div>
+          <h3>Scene Selection</h3>
+          <p class="muted">The selector validates NuRec labels, requires at least one explicit left turn and one right turn, then picks exactly 5 clips: left, right, and 3 lane-follow clips.</p>
+          <p style="margin-top:10px"><a href="C:\Users\brind\Documents\New project\ops\pi05_alpasim_stage0\select_stage0_candidates.py">select_stage0_candidates.py</a></p>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <h3>Dataset Build</h3>
+          <p class="muted">Raw AV cameras and egomotion are aligned to a 10 Hz timeline, RGB frames are decoded, ego kinematics are derived, and route/action targets are computed.</p>
+          <p style="margin-top:10px"><a href="C:\Users\brind\Documents\New project\ops\pi05_alpasim_stage0\build_stage0_dataset.py">build_stage0_dataset.py</a></p>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <h3>Normalization</h3>
+          <p class="muted">State and action stats are computed from the Stage 0 dataset itself. The script validates non-finite values, zero std, and bad quantiles before saving assets.</p>
+          <p style="margin-top:10px"><a href="C:\Users\brind\Documents\New project\ops\pi05_alpasim_stage0\compute_stage0_norm_stats.py">compute_stage0_norm_stats.py</a></p>
+        </div>
+        <div class="step">
+          <div class="num">4</div>
+          <h3>OpenPI JAX Fine-Tune</h3>
+          <p class="muted">A Stage 0 wrapper constructs the OpenPI training config, repacks observation tensors, exposes only the active action dims on output, and calls the upstream JAX train script.</p>
+          <p style="margin-top:10px"><a href="C:\Users\brind\Documents\New project\ops\pi05_alpasim_stage0\openpi_stage0.py">openpi_stage0.py</a></p>
+        </div>
+        <div class="step">
+          <div class="num">5</div>
+          <h3>Runtime Bridge + Driver</h3>
+          <p class="muted">At inference time, normalized outputs are denormalized, rolled into a feasible planar trajectory under kinematic limits, then served to AlpaSim via the custom external driver.</p>
+          <p style="margin-top:10px"><a href="C:\Users\brind\Documents\New project\ops\pi05_alpasim_stage0\bridge.py">bridge.py</a> / <a href="C:\Users\brind\Documents\New project\alpasim_pi05_driver\alpasim_pi05_driver\pi05_stage0_model.py">pi05_stage0_model.py</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Training Mechanics and Data Transforms</h2>
+      <div class="grid g2">
+        <div>
+          <table>
+            <tr><th>Mechanism</th><th>What actually happens</th></tr>
+            <tr><td>Dataset repo id</td><td><code>local/stage0_av_driving</code></td></tr>
+            <tr><td>Frames / episodes</td><td><code>545</code> frames across <code>5</code> episodes</td></tr>
+            <tr><td>Clip duration target</td><td><code>20.0 s</code> per clip</td></tr>
+            <tr><td>Sample rate</td><td><code>10 Hz</code></td></tr>
+            <tr><td>Batch size</td><td><code>8</code></td></tr>
+            <tr><td>Train steps</td><td><code>2500</code></td></tr>
+            <tr><td>Save interval</td><td><code>500</code></td></tr>
+            <tr><td>Log interval</td><td><code>25</code></td></tr>
+            <tr><td>Workers</td><td><code>0</code></td></tr>
+            <tr><td>Prompt behavior</td><td><code>prompt_from_task=True</code> with default model prompt <code>drive the route</code></td></tr>
+            <tr><td>Experiment name</td><td><code>pi05_stage0_av</code></td></tr>
+            <tr><td>WandB</td><td><code>False</code></td></tr>
+          </table>
+        </div>
+        <div>
+          <pre>Observation repack used in Stage 0
+
+observation.images.front  -> image.front
+observation.images.left   -> image.left
+observation.images.right  -> image.right
+observation.state         -> state
+observation.route         -> route
+actions                   -> actions
+prompt                    -> prompt
+
+DrivingInputs(...)
+  state := concat(ego_state, route.flatten())
+  image.base_0_rgb := front
+  image.left_wrist_0_rgb := left
+  image.right_wrist_0_rgb := right
+
+DrivingOutputs(...)
+  return actions[:, :3]</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Loss / Reward / Objective: What Was Actually Used</h2>
+      <div class="grid g3">
+        <div class="card">
+          <h3>What we did use</h3>
+          <ul>
+            <li>OpenPI JAX training path</li>
+            <li>LoRA fine-tuning on the PI0.5 stack</li>
+            <li>Stage 0 data transforms and normalization</li>
+            <li>Checkpoint weight initialization from PI0.5 base params</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>What we did not add</h3>
+          <ul>
+            <li>No RL reward function in this workspace</li>
+            <li>No PPO / policy-gradient loop</li>
+            <li>No learned simulator reward model</li>
+            <li>No custom loss file overriding the upstream OpenPI train objective</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>What acts like "safety"</h3>
+          <ul>
+            <li>Inference-time feasibility bridge</li>
+            <li>Acceleration clamps</li>
+            <li>Yaw-rate clamps</li>
+            <li>Lateral-acceleration clamps</li>
+            <li>These are post-model corrections, not training rewards</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Inference-Time Runtime Path</h2>
+      <div class="grid g2">
+        <div>
+          <pre>PredictionInput from AlpaSim
+  -> resolve live / black / override camera frames
+  -> build 30-dim state history
+  -> build 32x2 route array
+  -> map DriveCommand to prompt token
+  -> policy.infer(obs)
+  -> denormalize actions
+  -> rollout_feasible_trajectory(...)
+  -> emit trajectory + headings to simulator
+  -> log trace.jsonl and optional raw dumps</pre>
+        </div>
+        <div>
+          <table>
+            <tr><th>Runtime config</th><th>Actual value</th></tr>
+            <tr><td>Driver host/port</td><td><code>0.0.0.0:6789</code></td></tr>
+            <tr><td>Device</td><td><code>cuda</code></td></tr>
+            <tr><td>Context length</td><td><code>1</code></td></tr>
+            <tr><td>Output frequency</td><td><code>10 Hz</code></td></tr>
+            <tr><td>Route commands</td><td><code>use_waypoint_commands: true</code></td></tr>
+            <tr><td>Trajectory optimizer</td><td><code>disabled</code></td></tr>
+            <tr><td>Camera modes supported</td><td><code>normal</code>, <code>front_only</code>, <code>all_black</code>, <code>override</code></td></tr>
+            <tr><td>Tracing</td><td><code>trace.jsonl</code> + optional per-call dump dir</td></tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Feasibility Bridge and Kinematic Limits</h2>
+      <div class="grid g2">
+        <div>
+          <table>
+            <tr><th>Limit</th><th>Actual value</th></tr>
+            <tr><td>max_speed_mps</td><td><code>20.0</code></td></tr>
+            <tr><td>min_speed_mps</td><td><code>0.0</code></td></tr>
+            <tr><td>max_longitudinal_accel_mps2</td><td><code>4.0</code></td></tr>
+            <tr><td>min_longitudinal_accel_mps2</td><td><code>-6.0</code></td></tr>
+            <tr><td>max_yaw_rate_radps</td><td><code>0.7</code></td></tr>
+            <tr><td>max_lateral_accel_mps2</td><td><code>4.5</code></td></tr>
+            <tr><td>wheelbase_m</td><td><code>2.9</code></td></tr>
+          </table>
+        </div>
+        <div class="tight">
+          <div class="callout warn">
+            <strong>Why this matters</strong>
+            <p>The model does not directly hand AlpaSim a finished physically feasible car trajectory. The bridge takes the predicted action chunk, denormalizes it, and rolls it forward while enforcing speed, acceleration, yaw-rate, and lateral-acceleration limits.</p>
+          </div>
+          <div class="callout" style="margin-top:12px">
+            <strong>Implication</strong>
+            <p>Reported closed-loop behavior is the result of <code>model + bridge + controller</code>, not raw unconstrained model output alone.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Condition A: Best Full-Input Run</h2>
+      <div class="grid g4">
+        <div class="card"><div class="muted">Policy Calls</div><div class="metric green">101</div><div class="muted">full session</div></div>
+        <div class="card"><div class="muted">Collision Max</div><div class="metric green">0.0</div><div class="muted">no collision</div></div>
+        <div class="card"><div class="muted">Progress Last</div><div class="metric blue">0.4772</div><div class="muted">same-scene route</div></div>
+        <div class="card"><div class="muted">Distance</div><div class="metric teal">56.19 m</div><div class="muted">traveled in rollout</div></div>
+      </div>
+      <div class="grid g2" style="margin-top:14px">
+        <div>
+          <table>
+            <tr><th>Metric</th><th>Value</th></tr>
+            <tr><td>scene_id</td><td><code>clipgt-048b974e-1546-488a-b8f9-d32bff77f5aa</code></td></tr>
+            <tr><td>rollout_uuid</td><td><code>5ccdd896-2c06-11f1-bf44-fb9fdb4933dc</code></td></tr>
+            <tr><td>prompts</td><td><code>['lane_follow', 'right_turn']</code></td></tr>
+            <tr><td>latency_ms_mean_warm</td><td><code>239.208</code></td></tr>
+            <tr><td>policy_infer_ms_mean_warm</td><td><code>82.512</code></td></tr>
+            <tr><td>any_clamp_calls</td><td><code>76</code></td></tr>
+            <tr><td>accel_clamps_total</td><td><code>559</code></td></tr>
+            <tr><td>target_speed_first_mean</td><td><code>5.823222</code></td></tr>
+            <tr><td>delta_s_first_mean</td><td><code>0.534686</code></td></tr>
+            <tr><td>delta_yaw_first_mean</td><td><code>0.001434</code></td></tr>
+          </table>
+        </div>
+        <div>
+          <div class="bars">
+            <div class="bar"><div class="muted">camera_front nonzero</div><div class="track"><div class="fill" style="width:100%;background:var(--green)"></div></div><div>101 / 101</div></div>
+            <div class="bar"><div class="muted">camera_left nonzero</div><div class="track"><div class="fill" style="width:100%;background:var(--green)"></div></div><div>101 / 101</div></div>
+            <div class="bar"><div class="muted">camera_right nonzero</div><div class="track"><div class="fill" style="width:100%;background:var(--green)"></div></div><div>101 / 101</div></div>
+            <div class="bar"><div class="muted">warm infer vs 100ms loop</div><div class="track"><div class="fill" style="width:82.5%;background:var(--blue)"></div></div><div>82.5 ms</div></div>
+            <div class="bar"><div class="muted">warm end-to-end vs 100ms loop</div><div class="track"><div class="fill" style="width:100%;background:var(--amber)"></div></div><div>239.2 ms</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>What This Architecture Section Can and Cannot Claim</h2>
+      <div class="grid g3">
+        <div class="callout good">
+          <strong>Supported by the real files</strong>
+          <p>PI0.5 LoRA fine-tuning, 3-camera + state + route conditioning, 50x32 action shape preservation, Stage 0 data conversion, local normalization, feasibility bridge, and AlpaSim external-driver execution.</p>
+        </div>
+        <div class="callout warn">
+          <strong>Supported but only at wrapper level</strong>
+          <p>The backbone internals are only observable here through the actual config fields used: <code>gemma_2b_lora</code> and <code>gemma_300m_lora</code>. This dashboard does not invent deeper block counts that are not defined in this workspace.</p>
+        </div>
+        <div class="callout bad">
+          <strong>Not supported here</strong>
+          <p>No claim of a custom reward, a new RL algorithm, or a custom training objective beyond the OpenPI train path. If you later inspect the upstream OpenPI repo, that would be a separate deeper backbone report.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Artifact Links</h2>
+      <div class="grid g2">
+        <div>
+          <ul>
+            <li><a href="C:\Users\brind\Documents\New project\artifacts\stage0_rerun_A_complete\rollout\stage0_rerun_A.mp4">Condition A rollout video</a></li>
+            <li><a href="C:\Users\brind\Documents\New project\artifacts\stage0_rerun_A_complete\RERUN_SUMMARY.txt">Condition A rerun summary</a></li>
+            <li><a href="C:\Users\brind\Documents\New project\artifacts\stage0_rerun_A_complete\logs\trace.jsonl">Condition A trace.jsonl</a></li>
+            <li><a href="C:\Users\brind\Documents\New project\artifacts\stage0_rerun_A_complete\metrics\rollout_metrics.parquet">Condition A rollout metrics parquet</a></li>
+            <li><a href="C:\Users\brind\Documents\New project\artifacts\stage0_rerun_A_complete\rollout\rollout.asl">Condition A rollout ASL</a></li>
+          </ul>
+        </div>
+        <div>
+          <ul>
+            <li><a href="C:\Users\brind\Documents\New project\docs\pi05_alpasim_stage0_dashboard.html">Existing compact factual dashboard</a></li>
+            <li><a href="C:\Users\brind\Documents\New project\docs\pi05_alpasim_stage0_complete_report.html">Existing complete Stage 0 HTML report</a></li>
+            <li><a href="C:\Users\brind\Documents\New project\docs\pi05_alpasim_stage0_full_paper.md">Stage 0 full paper draft</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

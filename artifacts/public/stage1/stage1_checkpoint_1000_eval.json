@@ -1,0 +1,446 @@
+{
+  "checkpoint_dir": "/mnt/data/checkpoints/stage1/pi05_stage1_av/pi05_stage1_av/1000",
+  "dataset_root": "/mnt/data/datasets/stage1_fast_real_v1",
+  "eval_results": [
+    {
+      "camera_features": [
+        "camera_cross_left_120fov",
+        "camera_cross_right_120fov",
+        "camera_front_tele_30fov",
+        "camera_front_wide_120fov",
+        "camera_rear_left_70fov",
+        "camera_rear_right_70fov",
+        "camera_rear_tele_30fov"
+      ],
+      "clip_id": "0fd2c051-f5e1-4416-9bb5-9b93d92f55fb",
+      "maneuver": "lane_follow",
+      "num_bev_frames": 109,
+      "samples": [
+        {
+          "bev_index": 0,
+          "clamp_report": {
+            "accel_clamps": 21,
+            "any_clamp": true,
+            "lateral_accel_clamps": 0,
+            "speed_clamps": 0,
+            "yaw_rate_clamps": 0
+          },
+          "frame_index": 9,
+          "policy_infer_ms": 21070.146546000615,
+          "raw_action_dims_0_2": {
+            "delta_s": {
+              "first": 0.6230247020721436,
+              "max": 0.946980357170105,
+              "mean": 0.8255110383033752,
+              "min": 0.6118772029876709
+            },
+            "delta_yaw": {
+              "first": 0.001092999940738082,
+              "max": 0.003041035495698452,
+              "mean": 0.0009773860219866037,
+              "min": -0.000928094785194844
+            },
+            "target_speed": {
+              "first": 6.4441118240356445,
+              "max": 9.459668159484863,
+              "mean": 8.492609977722168,
+              "min": 6.4441118240356445
+            }
+          },
+          "trajectory_summary": {
+            "cumulative_abs_yaw_rad": 0.061828771606087685,
+            "distance_xy": 35.59652328491211,
+            "final_heading_rad": 0.0488693006336689,
+            "final_xy": [
+              35.59088134765625,
+              0.6338549256324768
+            ]
+          },
+          "wall_infer_ms": 21623.520248000204
+        },
+        {
+          "bev_index": 54,
+          "clamp_report": {
+            "accel_clamps": 22,
+            "any_clamp": true,
+            "lateral_accel_clamps": 0,
+            "speed_clamps": 0,
+            "yaw_rate_clamps": 0
+          },
+          "frame_index": 63,
+          "policy_infer_ms": 76.92188900182373,
+          "raw_action_dims_0_2": {
+            "delta_s": {
+              "first": 0.8548699021339417,
+              "max": 0.857970654964447,
+              "mean": 0.819709062576294,
+              "min": 0.774312436580658
+            },
+            "delta_yaw": {
+              "first": 0.003418116830289364,
+              "max": 0.004011515527963638,
+              "mean": 0.002032625023275614,
+              "min": -0.0001735213299980387
+            },
+            "target_speed": {
+              "first": 8.958208084106445,
+              "max": 9.03404426574707,
+              "mean": 8.89034652709961,
+              "min": 8.627756118774414
+            }
+          },
+          "trajectory_summary": {
+            "cumulative_abs_yaw_rad": 0.10240690410137177,
+            "distance_xy": 32.498985290527344,
+            "final_heading_rad": 0.10163125395774841,
+            "final_xy": [
+              32.38957595825195,
+              2.6644768714904785
+            ]
+          },
+          "wall_infer_ms": 207.31208700090065
+        },
+        {
+          "bev_index": 108,
+          "clamp_report": {
+            "accel_clamps": 23,
+            "any_clamp": true,
+            "lateral_accel_clamps": 0,
+            "speed_clamps": 0,
+            "yaw_rate_clamps": 0
+          },
+          "frame_index": 117,
+          "policy_infer_ms": 76.22239899865235,
+          "raw_action_dims_0_2": {
+            "delta_s": {
+              "first": 0.7765387296676636,
+              "max": 0.9380339980125427,
+              "mean": 0.8571830987930298,
+              "min": 0.7765387296676636
+            },
+            "delta_yaw": {
+              "first": 0.0029737097211182117,
+              "max": 0.0034597842022776604,
+              "mean": 0.0025364530738443136,
+              "min": 0.001942560775205493
+            },
+            "target_speed": {
+              "first": 9.198230743408203,
+              "max": 9.601548194885254,
+              "mean": 9.311519622802734,
+              "min": 9.090429306030273
+            }
+          },
+          "trajectory_summary": {
+            "cumulative_abs_yaw_rad": 0.12682263553142548,
+            "distance_xy": 35.111900329589844,
+            "final_heading_rad": 0.12682263553142548,
+            "final_xy": [
+              35.01331329345703,
+              2.629309892654419
+            ]
+          },
+          "wall_infer_ms": 198.34835199799272
+        }
+      ],
+      "split": "eval"
+    },
+    {
+      "camera_features": [
+        "camera_cross_left_120fov",
+        "camera_cross_right_120fov",
+        "camera_front_tele_30fov",
+        "camera_front_wide_120fov",
+        "camera_rear_left_70fov",
+        "camera_rear_right_70fov",
+        "camera_rear_tele_30fov"
+      ],
+      "clip_id": "f0674f19-6030-4e5c-9031-cd2528c35e06",
+      "maneuver": "left_turn",
+      "num_bev_frames": 109,
+      "samples": [
+        {
+          "bev_index": 0,
+          "clamp_report": {
+            "accel_clamps": 2,
+            "any_clamp": true,
+            "lateral_accel_clamps": 0,
+            "speed_clamps": 16,
+            "yaw_rate_clamps": 0
+          },
+          "frame_index": 9,
+          "policy_infer_ms": 78.22750700142933,
+          "raw_action_dims_0_2": {
+            "delta_s": {
+              "first": 0.1017783060669899,
+              "max": 0.1017783060669899,
+              "mean": 0.030872557312250137,
+              "min": -0.018242247402668
+            },
+            "delta_yaw": {
+              "first": 0.0003758039092645049,
+              "max": 0.008050995878875256,
+              "mean": 0.002163857454434037,
+              "min": -0.0017358906334266067
+            },
+            "target_speed": {
+              "first": 0.8127294182777405,
+              "max": 1.1030842065811157,
+              "mean": 0.29889288544654846,
+              "min": -0.3702150583267212
+            }
+          },
+          "trajectory_summary": {
+            "cumulative_abs_yaw_rad": 0.15960623021237552,
+            "distance_xy": 1.3431732654571533,
+            "final_heading_rad": 0.10819286853075027,
+            "final_xy": [
+              1.3427234888076782,
+              0.034756798297166824
+            ]
+          },
+          "wall_infer_ms": 233.75462299736682
+        },
+        {
+          "bev_index": 54,
+          "clamp_report": {
+            "accel_clamps": 0,
+            "any_clamp": true,
+            "lateral_accel_clamps": 0,
+            "speed_clamps": 11,
+            "yaw_rate_clamps": 0
+          },
+          "frame_index": 63,
+          "policy_infer_ms": 77.68566600134363,
+          "raw_action_dims_0_2": {
+            "delta_s": {
+              "first": 0.006209587212651968,
+              "max": 0.04638325795531273,
+              "mean": 0.028229543939232826,
+              "min": -0.0006521745235659182
+            },
+            "delta_yaw": {
+              "first": 0.004492474719882011,
+              "max": 0.004492474719882011,
+              "mean": -0.0008938854443840683,
+              "min": -0.00490993820130825
+            },
+            "target_speed": {
+              "first": -0.20156870782375336,
+              "max": 0.9452376365661621,
+              "mean": 0.4336267113685608,
+              "min": -0.3158043920993805
+            }
+          },
+          "trajectory_summary": {
+            "cumulative_abs_yaw_rad": 0.1312631219625473,
+            "distance_xy": 1.0135701894760132,
+            "final_heading_rad": -0.04469427093863487,
+            "final_xy": [
+              1.0131596326828003,
+              -0.02884616330265999
+            ]
+          },
+          "wall_infer_ms": 199.64995000191266
+        },
+        {
+          "bev_index": 108,
+          "clamp_report": {
+            "accel_clamps": 10,
+            "any_clamp": true,
+            "lateral_accel_clamps": 0,
+            "speed_clamps": 0,
+            "yaw_rate_clamps": 0
+          },
+          "frame_index": 117,
+          "policy_infer_ms": 76.19086100021377,
+          "raw_action_dims_0_2": {
+            "delta_s": {
+              "first": 0.4095434546470642,
+              "max": 0.8845354318618774,
+              "mean": 0.5485374331474304,
+              "min": 0.3589242696762085
+            },
+            "delta_yaw": {
+              "first": 0.011688616126775742,
+              "max": 0.012118475511670113,
+              "mean": 0.005199979059398174,
+              "min": 0.0028216522186994553
+            },
+            "target_speed": {
+              "first": 4.535651683807373,
+              "max": 8.688477516174316,
+              "mean": 6.022433280944824,
+              "min": 3.889543294906616
+            }
+          },
+          "trajectory_summary": {
+            "cumulative_abs_yaw_rad": 0.25999897718429565,
+            "distance_xy": 25.515457153320312,
+            "final_heading_rad": 0.25999897718429565,
+            "final_xy": [
+              25.05367660522461,
+              4.83236837387085
+            ]
+          },
+          "wall_infer_ms": 197.66076499945484
+        }
+      ],
+      "split": "eval"
+    },
+    {
+      "camera_features": [
+        "camera_cross_left_120fov",
+        "camera_cross_right_120fov",
+        "camera_front_tele_30fov",
+        "camera_front_wide_120fov",
+        "camera_rear_left_70fov",
+        "camera_rear_right_70fov",
+        "camera_rear_tele_30fov"
+      ],
+      "clip_id": "4bad2f63-1bab-4dbf-b55d-4a6606969103",
+      "maneuver": "right_turn",
+      "num_bev_frames": 109,
+      "samples": [
+        {
+          "bev_index": 0,
+          "clamp_report": {
+            "accel_clamps": 0,
+            "any_clamp": false,
+            "lateral_accel_clamps": 0,
+            "speed_clamps": 0,
+            "yaw_rate_clamps": 0
+          },
+          "frame_index": 9,
+          "policy_infer_ms": 78.30331000150181,
+          "raw_action_dims_0_2": {
+            "delta_s": {
+              "first": -0.07712344080209732,
+              "max": 0.13755285739898682,
+              "mean": 0.01671259105205536,
+              "min": -0.07792563736438751
+            },
+            "delta_yaw": {
+              "first": -0.0018183065112680197,
+              "max": 0.018924497067928314,
+              "mean": 0.008691289462149143,
+              "min": -0.0018183065112680197
+            },
+            "target_speed": {
+              "first": 0.3640280067920685,
+              "max": 2.8545124530792236,
+              "mean": 1.450806736946106,
+              "min": 0.3640280067920685
+            }
+          },
+          "trajectory_summary": {
+            "cumulative_abs_yaw_rad": 0.4509233385324478,
+            "distance_xy": 1.9745197296142578,
+            "final_heading_rad": 0.4345644414424896,
+            "final_xy": [
+              1.899173378944397,
+              0.5402490496635437
+            ]
+          },
+          "wall_infer_ms": 227.98629599856213
+        },
+        {
+          "bev_index": 54,
+          "clamp_report": {
+            "accel_clamps": 6,
+            "any_clamp": true,
+            "lateral_accel_clamps": 0,
+            "speed_clamps": 0,
+            "yaw_rate_clamps": 0
+          },
+          "frame_index": 63,
+          "policy_infer_ms": 76.9181200012099,
+          "raw_action_dims_0_2": {
+            "delta_s": {
+              "first": 0.20106790959835052,
+              "max": 0.2474042773246765,
+              "mean": 0.17811913788318634,
+              "min": 0.12699098885059357
+            },
+            "delta_yaw": {
+              "first": 0.0036056218668818474,
+              "max": 0.05400770530104637,
+              "mean": 0.025355840101838112,
+              "min": 0.0033559801522642374
+            },
+            "target_speed": {
+              "first": 2.849156141281128,
+              "max": 3.383572816848755,
+              "mean": 2.879958391189575,
+              "min": 2.507305860519409
+            }
+          },
+          "trajectory_summary": {
+            "cumulative_abs_yaw_rad": 1.2677921056747437,
+            "distance_xy": 7.843807697296143,
+            "final_heading_rad": 1.2677921056747437,
+            "final_xy": [
+              7.067174911499023,
+              3.4029924869537354
+            ]
+          },
+          "wall_infer_ms": 198.06033699933323
+        },
+        {
+          "bev_index": 108,
+          "clamp_report": {
+            "accel_clamps": 5,
+            "any_clamp": true,
+            "lateral_accel_clamps": 0,
+            "speed_clamps": 0,
+            "yaw_rate_clamps": 0
+          },
+          "frame_index": 117,
+          "policy_infer_ms": 76.11419599925284,
+          "raw_action_dims_0_2": {
+            "delta_s": {
+              "first": 0.230728879570961,
+              "max": 0.230728879570961,
+              "mean": 0.19506093859672546,
+              "min": 0.17916139960289001
+            },
+            "delta_yaw": {
+              "first": 0.05059833452105522,
+              "max": 0.05711311474442482,
+              "mean": 0.05238112434744835,
+              "min": 0.04613489657640457
+            },
+            "target_speed": {
+              "first": 2.2561466693878174,
+              "max": 2.2561466693878174,
+              "mean": 1.9099427461624146,
+              "min": 1.6941605806350708
+            }
+          },
+          "trajectory_summary": {
+            "cumulative_abs_yaw_rad": 2.619055986404419,
+            "distance_xy": 6.680027484893799,
+            "final_heading_rad": 2.619055986404419,
+            "final_xy": [
+              1.0304285287857056,
+              6.600074768066406
+            ]
+          },
+          "wall_infer_ms": 197.75526100056595
+        }
+      ],
+      "split": "eval"
+    }
+  ],
+  "manifest_path": "/mnt/data/assets/stage1_manifest_12clips.json",
+  "policy_metadata": {
+    "action_semantics": [
+      "delta_s",
+      "delta_yaw",
+      "target_speed"
+    ],
+    "representation": "offline_bev",
+    "stage": "stage1"
+  },
+  "samples_per_clip": 3
+}

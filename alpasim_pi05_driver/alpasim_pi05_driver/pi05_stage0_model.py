@@ -63,15 +63,21 @@ class CameraRuntimeConfig:
     mode: str
     override_dir: Path | None
     trace_log_path: Path | None
+    dump_dir: Path | None
+    dump_images: bool
 
     @classmethod
     def from_env(cls) -> "CameraRuntimeConfig":
         override_dir_raw = os.getenv("PI05_STAGE0_CAMERA_OVERRIDE_DIR")
         trace_log_raw = os.getenv("PI05_STAGE0_TRACE_LOG")
+        dump_dir_raw = os.getenv("PI05_STAGE0_DUMP_DIR")
+        dump_images_raw = os.getenv("PI05_STAGE0_DUMP_IMAGES", "0").strip().lower()
         return cls(
             mode=os.getenv("PI05_STAGE0_CAMERA_MODE", "normal").strip().lower(),
             override_dir=Path(override_dir_raw) if override_dir_raw else None,
             trace_log_path=Path(trace_log_raw) if trace_log_raw else None,
+            dump_dir=Path(dump_dir_raw) if dump_dir_raw else None,
+            dump_images=dump_images_raw in {"1", "true", "yes", "on"},
         )
 
 
@@ -368,6 +374,62 @@ class Pi05Stage0Model(BaseTrajectoryModel):
         with self._runtime_cfg.trace_log_path.open("a", encoding="utf-8") as handle:
             handle.write(trace_line + "\n")
 
+    def _dump_call_artifacts(
+        self,
+        *,
+        call_index: int,
+        time_in: str,
+        time_out: str,
+        obs: dict[str, Any],
+        camera_diagnostics: dict[str, CameraDiagnostic],
+        active_actions: np.ndarray,
+        full_actions: np.ndarray,
+        trajectory_xy: np.ndarray,
+        headings: np.ndarray,
+        clamp_report: Any,
+        prediction_input: PredictionInput,
+        inference: dict[str, Any],
+    ) -> None:
+        if self._runtime_cfg.dump_dir is None:
+            return
+
+        dump_dir = self._runtime_cfg.dump_dir
+        dump_dir.mkdir(parents=True, exist_ok=True)
+        stem = f"call_{call_index:04d}"
+
+        meta_payload = {
+            "call_index": call_index,
+            "timestamp_in_utc": time_in,
+            "timestamp_out_utc": time_out,
+            "camera_mode": self._runtime_cfg.mode or "normal",
+            "camera_status": {
+                camera_id: diagnostic.to_dict() for camera_id, diagnostic in camera_diagnostics.items()
+            },
+            "prompt": obs["prompt"],
+            "speed_mps": float(prediction_input.speed),
+            "acceleration_mps2": float(prediction_input.acceleration),
+            "policy_timing": {
+                key: float(value) if isinstance(value, (int, float, np.floating)) else value
+                for key, value in inference.get("policy_timing", {}).items()
+            },
+            "clamp_report": clamp_report.to_dict(),
+        }
+        (dump_dir / f"{stem}.json").write_text(json.dumps(meta_payload, indent=2, sort_keys=True), encoding="utf-8")
+
+        dump_arrays: dict[str, np.ndarray] = {
+            "state": np.asarray(obs["state"], dtype=np.float32),
+            "route": np.asarray(obs["route"], dtype=np.float32),
+            "active_actions": np.asarray(active_actions, dtype=np.float32),
+            "full_actions": np.asarray(full_actions, dtype=np.float32),
+            "trajectory_xy": np.asarray(trajectory_xy, dtype=np.float32),
+            "headings": np.asarray(headings, dtype=np.float32),
+        }
+        if self._runtime_cfg.dump_images:
+            dump_arrays["image_front"] = np.asarray(obs["image"]["front"], dtype=np.uint8)
+            dump_arrays["image_left"] = np.asarray(obs["image"]["left"], dtype=np.uint8)
+            dump_arrays["image_right"] = np.asarray(obs["image"]["right"], dtype=np.uint8)
+        np.savez_compressed(dump_dir / f"{stem}.npz", **dump_arrays)
+
     def predict(self, prediction_input: PredictionInput) -> ModelPrediction:
         self._validate_cameras(prediction_input.camera_images)
         self._call_index += 1
@@ -425,6 +487,20 @@ class Pi05Stage0Model(BaseTrajectoryModel):
             "acceleration_mps2": float(prediction_input.acceleration),
         }
         self._emit_trace(trace_payload)
+        self._dump_call_artifacts(
+            call_index=self._call_index,
+            time_in=time_in,
+            time_out=time_out,
+            obs=obs,
+            camera_diagnostics=camera_diagnostics,
+            active_actions=active_actions,
+            full_actions=full_actions,
+            trajectory_xy=trajectory_xy,
+            headings=headings,
+            clamp_report=clamp_report,
+            prediction_input=prediction_input,
+            inference=inference,
+        )
 
         reasoning = (
             f"prompt={obs['prompt']} infer_ms={inference['policy_timing']['infer_ms']:.1f} "

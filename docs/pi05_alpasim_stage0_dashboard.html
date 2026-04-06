@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PI0.5 AlpaSim Stage 0 Dashboard</title>
+  <style>
+    :root { --bg:#0b1220; --panel:#121c30; --line:#273757; --text:#ecf2ff; --muted:#9db1d4; --blue:#69a9ff; --green:#34c07d; --amber:#efb25d; --red:#f17171; --purple:#a18dff; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:"Segoe UI",system-ui,sans-serif; background:linear-gradient(180deg,#09111d 0%,#0b1220 100%); color:var(--text); }
+    .wrap { width:min(1260px,calc(100vw - 32px)); margin:0 auto; padding:24px 0 48px; }
+    .hero,.panel,.card { background:rgba(18,28,48,.94); border:1px solid rgba(255,255,255,.08); border-radius:18px; box-shadow:0 18px 40px rgba(0,0,0,.26); }
+    .hero,.panel,.card { padding:18px; }
+    .hero { margin-bottom:16px; }
+    h1,h2,h3 { margin:0 0 10px; line-height:1.15; }
+    h1 { font-size:32px; }
+    h2 { font-size:22px; }
+    h3 { font-size:16px; }
+    p { margin:0; }
+    .muted { color:var(--muted); }
+    .grid { display:grid; gap:14px; }
+    .g2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .g4 { grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .cards { margin-top:14px; }
+    .metric { font-size:28px; font-weight:700; margin-top:8px; }
+    .blue{color:var(--blue)} .green{color:var(--green)} .amber{color:var(--amber)} .red{color:var(--red)} .purple{color:var(--purple)}
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th,td { padding:9px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+    code,pre { font-family:ui-monospace,Consolas,monospace; }
+    pre { margin:0; background:#0c1526; border:1px solid var(--line); border-radius:12px; padding:12px; overflow:auto; white-space:pre-wrap; word-break:break-word; font-size:13px; }
+    .bars { display:grid; gap:10px; }
+    .bar { display:grid; grid-template-columns:120px 1fr 80px; gap:10px; align-items:center; font-size:13px; }
+    .track { height:18px; border:1px solid var(--line); border-radius:999px; overflow:hidden; background:#0b1527; }
+    .fill { height:100%; border-radius:999px; }
+    a { color:#9fc9ff; text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    ul { margin:0; padding-left:18px; }
+    li { margin:6px 0; }
+    @media (max-width: 980px) { .g2,.g4{grid-template-columns:1fr;} .bar{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="muted" style="text-transform:uppercase;letter-spacing:.12em;font-size:12px;margin-bottom:8px">Factual Dashboard</div>
+      <h1>PI0.5 Closed-Loop Driving Transfer in NVIDIA AlpaSim</h1>
+      <p class="muted">Single-page summary of the Stage 0 run set: data used, training spec, bridge/runtime wiring, baseline rollout, official A/B/C/D camera ablations, measured metrics, log-derived execution facts, and artifact links.</p>
+      <div class="grid g4 cards">
+        <div class="card"><div class="muted">Training Episodes</div><div class="metric blue">5</div><div class="muted">local AV dataset episodes</div></div>
+        <div class="card"><div class="muted">Total Frames</div><div class="metric">545</div><div class="muted">10 Hz</div></div>
+        <div class="card"><div class="muted">Train Steps</div><div class="metric purple">2500</div><div class="muted">batch size 8</div></div>
+        <div class="card"><div class="muted">Policy Calls / Run</div><div class="metric green">101</div><div class="muted">observed in baseline and A/B/C/D</div></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Exact Configuration</h2>
+      <div class="grid g2">
+        <div>
+          <table>
+            <tr><th>Training</th><th>Exact value</th></tr>
+            <tr><td>Base checkpoint</td><td><code>gs://openpi-assets/checkpoints/pi05_base/params</code></td></tr>
+            <tr><td>Eval checkpoint</td><td><code>/mnt/data/checkpoints/pi05_stage0_av/pi05_stage0_av/1000</code></td></tr>
+            <tr><td>Model family</td><td><code>pi0.5</code></td></tr>
+            <tr><td>Fine-tune mode</td><td>LoRA</td></tr>
+            <tr><td>PaliGemma variant</td><td><code>gemma_2b_lora</code></td></tr>
+            <tr><td>Action expert</td><td><code>gemma_300m_lora</code></td></tr>
+            <tr><td>Action tensor</td><td><code>50 x 32</code></td></tr>
+            <tr><td>Active dims</td><td><code>delta_s</code>, <code>delta_yaw</code>, <code>target_speed</code></td></tr>
+            <tr><td>Token limit</td><td><code>1024</code></td></tr>
+            <tr><td>Repo id</td><td><code>local/stage0_av_driving</code></td></tr>
+          </table>
+        </div>
+        <div>
+          <table>
+            <tr><th>Runtime</th><th>Exact value</th></tr>
+            <tr><td>Eval method</td><td><code>official_alpasim_wizard_local_external_driver</code></td></tr>
+            <tr><td>Driver endpoint</td><td><code>0.0.0.0:6789</code></td></tr>
+            <tr><td>Control step</td><td><code>100 ms</code></td></tr>
+            <tr><td>Output frequency</td><td><code>10 Hz</code></td></tr>
+            <tr><td>Context length</td><td><code>1</code></td></tr>
+            <tr><td>Cameras</td><td><code>camera_front_wide_120fov</code>, <code>camera_cross_left_120fov</code>, <code>camera_cross_right_120fov</code></td></tr>
+            <tr><td>Route command mode</td><td><code>use_waypoint_commands: true</code></td></tr>
+            <tr><td>Trajectory optimizer</td><td><code>disabled</code></td></tr>
+            <tr><td>Bridge clamps</td><td>acceleration, speed, yaw-rate, lateral acceleration</td></tr>
+            <tr><td>Scene</td><td><code>clipgt-048b974e-1546-488a-b8f9-d32bff77f5aa</code></td></tr>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Data Used</h2>
+      <div class="grid g2">
+        <div>
+          <ul>
+            <li>Raw source family: NVIDIA PhysicalAI Autonomous Vehicles, paired to matching NuRec simulator scenes.</li>
+            <li>Manifest constraint: exactly <code>5</code> clips, with at least one <code>left_turn</code> and one <code>right_turn</code>.</li>
+            <li>Per-clip target duration: <code>20.0 s</code>.</li>
+            <li>Expected sample rate: <code>10 Hz</code>.</li>
+            <li>Total local dataset used for training: <code>5 episodes</code>, <code>545 total frames</code>.</li>
+            <li>State history uses speed, yaw rate, and acceleration windows.</li>
+            <li>Route corridor length: <code>32</code> future points.</li>
+          </ul>
+        </div>
+        <div>
+          <pre>Training flow
+
+Raw AV + NuRec
+  -> dataset build
+  -> LeRobot local repo (local/stage0_av_driving)
+  -> PI0.5 LoRA fine-tune
+  -> checkpoint /pi05_stage0_av/1000
+  -> AlpaSim external driver
+
+Runtime flow
+
+Sensorsim cameras + route
+  -> PI0.5 driver
+  -> action chunk (delta_s, delta_yaw, speed)
+  -> kinematic bridge + clamps
+  -> controller + physics</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Execution Proof From Logs</h2>
+      <div class="grid g2">
+        <div>
+          <table>
+            <tr><th>Evidence</th><th>Observed value</th></tr>
+            <tr><td>Driver registry</td><td><code>available_models=['pi05_stage0']</code></td></tr>
+            <tr><td>Checkpoint restore</td><td><code>/mnt/backup50/pi05_stage0_backup_20260329/checkpoints/pi05_stage0_av/pi05_stage0_av/1000/params</code></td></tr>
+            <tr><td>Loaded line</td><td><code>Loaded PI 0.5 Stage 0 policy</code></td></tr>
+            <tr><td>Driver start</td><td><code>Starting pi05_stage0 driver on 0.0.0.0:6789</code></td></tr>
+            <tr><td>Runtime connection</td><td><code>Connected to driver at localhost:6789: version_id: "pi05_stage0-driver-0.18.0"</code></td></tr>
+            <tr><td>Policy calls</td><td><code>101</code></td></tr>
+            <tr><td>Inference batches</td><td><code>100 processed, 100 total items, avg size 1.0</code></td></tr>
+            <tr><td>Session</td><td><code>Session COMPLETED</code></td></tr>
+          </table>
+        </div>
+        <div>
+          <pre>Observed runtime sequence
+
+PolicyEvent
+ControllerEvent
+PhysicsEvent
+StepEvent
+...
+SimulationEndEvent
+Session COMPLETED
+
+Authoritative local logs
+
+../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/A/driver.log
+../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/A/wizard.log
+../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/A/trace.jsonl
+../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation_A/txt-logs/runtime_worker_0.log</pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Baseline Same-Scene Rollout</h2>
+      <div class="grid g4">
+        <div class="card"><div class="muted">Collision</div><div class="metric green">0.0</div></div>
+        <div class="card"><div class="muted">Offroad</div><div class="metric red">1.0</div></div>
+        <div class="card"><div class="muted">Wrong Lane</div><div class="metric red">1.0</div></div>
+        <div class="card"><div class="muted">Progress</div><div class="metric blue">0.4772</div></div>
+      </div>
+      <table style="margin-top:14px">
+        <tr><th>Metric</th><th>Value</th></tr>
+        <tr><td>progress_rel</td><td>1.0</td></tr>
+        <tr><td>dist_to_gt_trajectory</td><td>0.9977501128523617</td></tr>
+        <tr><td>dist_to_gt_location</td><td>12.51743121959909</td></tr>
+        <tr><td>dist_traveled_m</td><td>56.191953509330936</td></tr>
+        <tr><td>plan_deviation</td><td>0.46298382270814414</td></tr>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>Official A/B/C/D Camera Ablation</h2>
+      <table>
+        <tr>
+          <th>Cond</th><th>Visual input</th><th>Policy calls</th><th>Collision max</th><th>Offroad max</th><th>Wrong-lane max</th><th>Progress last</th><th>Distance (m)</th><th>Target speed first mean</th><th>Accel clamps</th>
+        </tr>
+        <tr><td>A</td><td>All 3 cameras live</td><td>101</td><td>0.0</td><td>1.0</td><td>1.0</td><td>0.4772283417512127</td><td>56.191953509330936</td><td>5.823222</td><td>559</td></tr>
+        <tr><td>B</td><td>Front live, side black</td><td>101</td><td>0.0</td><td>1.0</td><td>1.0</td><td>0.4381659182448954</td><td>51.515687797733406</td><td>5.111924</td><td>543</td></tr>
+        <tr><td>C</td><td>All black</td><td>101</td><td>1.0</td><td>1.0</td><td>1.0</td><td>0.5472957961598665</td><td>72.06983179771166</td><td>8.589554</td><td>1028</td></tr>
+        <tr><td>D</td><td>Wrong-scene override</td><td>101</td><td>0.0</td><td>1.0</td><td>1.0</td><td>0.5666577318284498</td><td>66.89494101556119</td><td>6.747171</td><td>715</td></tr>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>Metric Bars</h2>
+      <div class="grid g2">
+        <div class="card"><h3>Progress Last</h3><div class="bars">
+          <div class="bar"><div class="muted">A</div><div class="track"><div class="fill" style="width:47.72%;background:var(--blue)"></div></div><div>0.4772</div></div>
+          <div class="bar"><div class="muted">B</div><div class="track"><div class="fill" style="width:43.82%;background:#53d2c7"></div></div><div>0.4382</div></div>
+          <div class="bar"><div class="muted">C</div><div class="track"><div class="fill" style="width:54.73%;background:var(--amber)"></div></div><div>0.5473</div></div>
+          <div class="bar"><div class="muted">D</div><div class="track"><div class="fill" style="width:56.67%;background:var(--purple)"></div></div><div>0.5667</div></div>
+        </div></div>
+        <div class="card"><h3>Distance Traveled</h3><div class="bars">
+          <div class="bar"><div class="muted">A</div><div class="track"><div class="fill" style="width:77.98%;background:var(--blue)"></div></div><div>56.19</div></div>
+          <div class="bar"><div class="muted">B</div><div class="track"><div class="fill" style="width:71.48%;background:#53d2c7"></div></div><div>51.52</div></div>
+          <div class="bar"><div class="muted">C</div><div class="track"><div class="fill" style="width:100%;background:var(--amber)"></div></div><div>72.07</div></div>
+          <div class="bar"><div class="muted">D</div><div class="track"><div class="fill" style="width:92.82%;background:var(--purple)"></div></div><div>66.89</div></div>
+        </div></div>
+        <div class="card"><h3>Target Speed First Mean</h3><div class="bars">
+          <div class="bar"><div class="muted">A</div><div class="track"><div class="fill" style="width:67.80%;background:var(--blue)"></div></div><div>5.8232</div></div>
+          <div class="bar"><div class="muted">B</div><div class="track"><div class="fill" style="width:59.51%;background:#53d2c7"></div></div><div>5.1119</div></div>
+          <div class="bar"><div class="muted">C</div><div class="track"><div class="fill" style="width:100%;background:var(--amber)"></div></div><div>8.5896</div></div>
+          <div class="bar"><div class="muted">D</div><div class="track"><div class="fill" style="width:78.55%;background:var(--purple)"></div></div><div>6.7472</div></div>
+        </div></div>
+        <div class="card"><h3>Warm Latency Mean (ms)</h3><div class="bars">
+          <div class="bar"><div class="muted">A</div><div class="track"><div class="fill" style="width:97.02%;background:var(--blue)"></div></div><div>242.696</div></div>
+          <div class="bar"><div class="muted">B</div><div class="track"><div class="fill" style="width:99.60%;background:#53d2c7"></div></div><div>249.152</div></div>
+          <div class="bar"><div class="muted">C</div><div class="track"><div class="fill" style="width:99.83%;background:var(--amber)"></div></div><div>249.718</div></div>
+          <div class="bar"><div class="muted">D</div><div class="track"><div class="fill" style="width:100%;background:var(--purple)"></div></div><div>250.148</div></div>
+        </div></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Sensor Facts and Prompt Sets</h2>
+      <table>
+        <tr><th>Condition</th><th>Front avail/nonzero</th><th>Left avail/nonzero</th><th>Right avail/nonzero</th><th>Prompt set</th><th>delta_s first mean</th><th>delta_yaw first mean</th><th>target_speed first mean</th></tr>
+        <tr><td>A</td><td>101 / 101</td><td>101 / 101</td><td>101 / 101</td><td><code>lane_follow</code>, <code>right_turn</code></td><td>0.534686</td><td>0.001434</td><td>5.823222</td></tr>
+        <tr><td>B</td><td>101 / 101</td><td>101 / 0</td><td>101 / 0</td><td><code>lane_follow</code>, <code>right_turn</code></td><td>0.462435</td><td>0.001847</td><td>5.111924</td></tr>
+        <tr><td>C</td><td>101 / 0</td><td>101 / 0</td><td>101 / 0</td><td><code>lane_follow</code>, <code>left_turn</code>, <code>right_turn</code></td><td>0.767918</td><td>-0.010987</td><td>8.589554</td></tr>
+        <tr><td>D</td><td>101 / 101</td><td>101 / 101</td><td>101 / 101</td><td><code>lane_follow</code>, <code>right_turn</code></td><td>0.651391</td><td>-0.000006</td><td>6.747171</td></tr>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>Media and Artifact Links</h2>
+      <div class="grid g2">
+        <div>
+          <ul>
+            <li><a href="../artifacts/stage0_test_bundle/stage0_same_scene_rollout.mp4">Baseline rollout MP4</a></li>
+            <li><a href="../artifacts/stage0_test_bundle/screenshots/stage0_same_scene_frame_01.png">Screenshot 1</a></li>
+            <li><a href="../artifacts/stage0_test_bundle/screenshots/stage0_same_scene_frame_02.png">Screenshot 2</a></li>
+            <li><a href="../artifacts/stage0_test_bundle/screenshots/stage0_same_scene_frame_03.png">Screenshot 3</a></li>
+            <li><a href="../artifacts/stage0_test_bundle/screenshots/stage0_same_scene_frame_04.png">Screenshot 4</a></li>
+            <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation_A/aggregate/metrics_results.txt">A aggregate metrics</a></li>
+            <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation_B/aggregate/metrics_results.txt">B aggregate metrics</a></li>
+            <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation_C/aggregate/metrics_results.txt">C aggregate metrics</a></li>
+            <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation_D/aggregate/metrics_results.txt">D aggregate metrics</a></li>
+          </ul>
+        </div>
+        <div>
+          <ul>
+            <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/A/trace.jsonl">A trace</a></li>
+            <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/A/driver.log">A driver log</a></li>
+            <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/A/wizard.log">A wizard log</a></li>
+            <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation_A/txt-logs/runtime_worker_0.log">A runtime worker log</a></li>
+            <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/A/run_manifest.txt">A run manifest</a></li>
+            <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/A/stage0_pi05_A.yaml">A driver config</a></li>
+            <li><a href="../artifacts/stage0_test_bundle/RUN_METRICS_SUMMARY.txt">Baseline metrics summary</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

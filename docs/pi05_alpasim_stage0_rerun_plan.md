@@ -39,6 +39,34 @@ Each prediction call records:
 - raw action summaries for dims `0..2`
 - clamp counts and `any_clamp`
 
+### 4. Raw input/output dump logging
+
+If you want the real VLA inputs and outputs per call, enable:
+
+- `PI05_STAGE0_DUMP_DIR=/path/to/dump_dir`
+- `PI05_STAGE0_DUMP_IMAGES=1`
+
+For each policy call, the driver will save:
+
+- `call_XXXX.json`
+  - timestamps
+  - prompt
+  - speed / acceleration
+  - camera diagnostics
+  - policy timing
+  - clamp report
+- `call_XXXX.npz`
+  - `state`
+  - `route`
+  - `active_actions`
+  - `full_actions`
+  - `trajectory_xy`
+  - `headings`
+  - and, if `PI05_STAGE0_DUMP_IMAGES=1`:
+    - `image_front`
+    - `image_left`
+    - `image_right`
+
 ## Camera Conditions to Run
 
 Run the same scene under the following four conditions.
@@ -173,6 +201,8 @@ The updated driver supports:
 - `PI05_STAGE0_CAMERA_MODE=override`
 - `PI05_STAGE0_CAMERA_OVERRIDE_DIR=/path/to/override_dir`
 - `PI05_STAGE0_TRACE_LOG=/path/to/stage0_trace.jsonl`
+- `PI05_STAGE0_DUMP_DIR=/path/to/dump_dir`
+- `PI05_STAGE0_DUMP_IMAGES=1`
 
 Implementation:
 

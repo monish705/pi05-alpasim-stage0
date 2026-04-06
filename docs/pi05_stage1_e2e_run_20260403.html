@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PI0.5 Stage 1 E2E Run 2026-04-03</title>
+  <style>
+    :root {
+      --bg: #09131f;
+      --panel: #101d2c;
+      --panel-2: #13263a;
+      --text: #e8eef5;
+      --muted: #9db0c2;
+      --accent: #39d0ff;
+      --good: #3de28d;
+      --warn: #ffb347;
+      --bad: #ff6b6b;
+      --border: #20364d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(180deg, #07111b, #0b1523 40%, #08111a);
+      color: var(--text);
+    }
+    .wrap {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 24px auto 48px;
+    }
+    .hero, .panel {
+      background: rgba(16, 29, 44, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+    }
+    .hero {
+      margin-bottom: 18px;
+      background: radial-gradient(circle at top left, rgba(57, 208, 255, 0.16), transparent 42%), rgba(16, 29, 44, 0.95);
+    }
+    h1, h2, h3 { margin: 0 0 10px; }
+    p { margin: 0 0 10px; line-height: 1.5; }
+    .muted { color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .metric {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .metric .label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .metric .value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .metric.good .value { color: var(--good); }
+    .metric.warn .value { color: var(--warn); }
+    .metric.bad .value { color: var(--bad); }
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+    ul {
+      margin: 10px 0 0 18px;
+      padding: 0;
+      line-height: 1.5;
+    }
+    code {
+      font-family: Consolas, monospace;
+      background: rgba(255,255,255,0.06);
+      padding: 1px 6px;
+      border-radius: 6px;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .artifacts a {
+      display: block;
+      margin: 8px 0;
+    }
+    @media (max-width: 920px) {
+      .grid, .section-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 680px) {
+      .grid, .section-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>PI0.5 Stage 1 End-to-End Run</h1>
+      <p class="muted">Completed real AlpaSim external-driver session using the Stage 1 checkpoint at step <code>1000</code> on 2026-04-03.</p>
+      <p>Scene: <code>clipgt-048b974e-1546-488a-b8f9-d32bff77f5aa</code> | Runtime: official <code>local_external_driver</code> | Driver: <code>pi05_stage1</code></p>
+      <div class="grid">
+        <div class="metric good">
+          <div class="label">Session</div>
+          <div class="value">Completed</div>
+        </div>
+        <div class="metric">
+          <div class="label">Policy Calls</div>
+          <div class="value">97</div>
+        </div>
+        <div class="metric">
+          <div class="label">Progress Last</div>
+          <div class="value">0.5393</div>
+        </div>
+        <div class="metric">
+          <div class="label">Distance Traveled</div>
+          <div class="value">60.08 m</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="metric good">
+        <div class="label">Collision Front Last</div>
+        <div class="value">0.0</div>
+      </div>
+      <div class="metric warn">
+        <div class="label">Wrong Lane Last</div>
+        <div class="value">1.0</div>
+      </div>
+      <div class="metric">
+        <div class="label">Mean Latency</div>
+        <div class="value">893 ms</div>
+      </div>
+      <div class="metric">
+        <div class="label">Mean Policy Infer</div>
+        <div class="value">299 ms</div>
+      </div>
+    </div>
+
+    <div class="section-grid">
+      <div class="panel">
+        <h2>Scene Camera Truth</h2>
+        <p>This scene only exposed 4 valid cameras, so this completed run is a scene-valid 4-camera Stage 1 BEV run, not a 6/7-camera scene.</p>
+        <ul>
+          <li><code>camera_cross_left_120fov</code></li>
+          <li><code>camera_cross_right_120fov</code></li>
+          <li><code>camera_front_tele_30fov</code></li>
+          <li><code>camera_front_wide_120fov</code></li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h2>Clamp Summary</h2>
+        <ul>
+          <li>Total accel clamps: <code>454</code></li>
+          <li>Total yaw-rate clamps: <code>0</code></li>
+          <li>Total lateral-accel clamps: <code>0</code></li>
+          <li>Total speed clamps: <code>0</code></li>
+          <li>Warm steady-state policy inference: <code>78.57 ms</code></li>
+          <li>Warm steady-state end-to-end latency: <code>658.37 ms</code></li>
+          <li>Prompts observed: <code>lane_follow</code>, <code>right_turn</code></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-grid">
+      <div class="panel">
+        <h2>Rollout Metrics</h2>
+        <ul>
+          <li><code>progress_rel</code> last: <code>0.5245878696164972</code></li>
+          <li><code>dist_to_gt_trajectory</code> last: <code>2.8322854893026865</code></li>
+          <li><code>dist_to_gt_location</code> last: <code>54.41978245882358</code></li>
+          <li><code>plan_deviation</code> last: <code>0.46515549054090444</code></li>
+          <li><code>offroad</code> last: <code>0.0</code></li>
+        </ul>
+      </div>
+      <div class="panel artifacts">
+        <h2>Local Artifacts</h2>
+        <a href="C:\Users\brind\Documents\New project\artifacts\stage1_e2e_20260403\stage1_scene4cam_run.mp4">MP4</a>
+        <a href="C:\Users\brind\Documents\New project\artifacts\stage1_e2e_20260403\metrics.parquet">Metrics Parquet</a>
+        <a href="C:\Users\brind\Documents\New project\artifacts\stage1_e2e_20260403\trace.jsonl">Trace</a>
+        <a href="C:\Users\brind\Documents\New project\artifacts\stage1_e2e_20260403\driver.log">Driver Log</a>
+        <a href="C:\Users\brind\Documents\New project\artifacts\stage1_e2e_20260403\wizard.log">Wizard Log</a>
+        <a href="C:\Users\brind\Documents\New project\artifacts\stage1_e2e_20260403\runtime_worker_0.log">Runtime Log</a>
+        <a href="C:\Users\brind\Documents\New project\artifacts\stage1_e2e_20260403\POST_RUN_SUMMARY.txt">Run Summary</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

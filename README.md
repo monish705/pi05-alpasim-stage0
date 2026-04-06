@@ -1,92 +1,39 @@
-# PI0.5 AlpaSim Stage 0
+# PI0.5 AlpaSim Stage Progress
 
-This repository contains a focused Stage 0 experiment that adapts `pi0.5` into a closed-loop driving policy for NVIDIA AlpaSim.
+This repository contains the code, docs, and selected artifacts for a real PI0.5-to-AlpaSim transfer project.
 
-The exact scope of Stage 0 is narrow:
+## What is proven
 
-- fine-tune `pi0.5` on a tiny gated NVIDIA AV subset
-- preserve the native PI action tensor shape
-- remap the active action dimensions into a kinematically feasible driving trajectory
-- run the resulting policy as a custom external AlpaSim driver
-- validate that the model can complete a same-scene closed-loop rollout end-to-end
+- Stage 0 same-scene closed-loop transfer worked end-to-end.
+- Stage 1 LoRA training ran to checkpoint `1000`.
+- Stage 1 offline eval showed real turn geometry signal on held-out clips.
+- One real Stage 1 closed-loop AlpaSim rollout completed on a scene-valid 4-camera runtime rig.
 
-This repository is not a general AV stack and is not a claim of production driving capability. It is a project repo for the Stage 0 transfer experiment and its artifacts.
+## What is not proven yet
 
-## Main Result
+- A real closed-loop Stage 1 rollout on a full 6/7-camera runtime scene.
+- Strong final driving performance.
+- A recovered copy of the lost trained checkpoint storage.
 
-Stage 0 produced a completed same-scene closed-loop AlpaSim rollout using the fine-tuned PI0.5 checkpoint.
+## Start Here
 
-Recovered rollout summary:
+- [Docs index](docs/README.md)
+- [Public artifacts](artifacts/public/README.md)
+- [Stage 1 handoff](docs/pi05_stage1_handoff_20260403.md)
+- [Stage 1 1k training run](docs/pi05_stage1_1k_training_run.md)
+- [Stage 1 4-camera E2E run](docs/pi05_stage1_e2e_run_20260403.md)
+- [Architecture dashboard](docs/pi05_alpasim_stage0_architecture_dashboard.html)
 
-- `collision_any = 0.0`
-- `offroad = 1.0`
-- `wrong_lane = 1.0`
-- `progress = 0.4772283417512127`
-- `dist_traveled_m = 56.191953509330936`
+## Code
 
-Interpretation:
+- `ops/pi05_alpasim_stage1/` contains the Stage 1 dataset, BEV, training, and manifest code.
+- `alpasim_pi05_driver/` contains the external driver and runtime configs.
 
-- the integration worked end-to-end
-- repeated closed-loop inference worked
-- the rollout completed without collision
-- the policy quality is not yet sufficient for lane-keeping or road adherence
+## Current blocker
 
-## What Is In This Repo
+The next important runtime test is finding a `clipgt-*` AlpaSim scene that actually exposes the full Stage 1 7-camera rig.
 
-### Core code
+## Notes
 
-- [ops/pi05_alpasim_stage0](C:\Users\brind\Documents\New project\ops\pi05_alpasim_stage0)
-  Stage 0 dataset conversion, norm-stat computation, token audit, training config, and bridge logic.
-- [alpasim_pi05_driver](C:\Users\brind\Documents\New project\alpasim_pi05_driver)
-  External AlpaSim driver implementation and runtime configs for the fine-tuned PI0.5 policy.
-- [tests/test_pi05_alpasim_stage0.py](C:\Users\brind\Documents\New project\tests\test_pi05_alpasim_stage0.py)
-  Stage 0 tests for manifest validation and trajectory-feasibility logic.
-
-### Documentation
-
-- [docs/README.md](C:\Users\brind\Documents\New project\docs\README.md)
-- [docs/pi05_alpasim_stage0_full_paper.md](C:\Users\brind\Documents\New project\docs\pi05_alpasim_stage0_full_paper.md)
-- [docs/pi05_alpasim_stage0_public_report.md](C:\Users\brind\Documents\New project\docs\pi05_alpasim_stage0_public_report.md)
-- [docs/pi05_alpasim_stage0_publish_checklist.md](C:\Users\brind\Documents\New project\docs\pi05_alpasim_stage0_publish_checklist.md)
-- [docs/pi05_alpasim_stage0_rerun_plan.md](C:\Users\brind\Documents\New project\docs\pi05_alpasim_stage0_rerun_plan.md)
-- [docs/pi05_alpasim_stage0_social_post.md](C:\Users\brind\Documents\New project\docs\pi05_alpasim_stage0_social_post.md)
-
-### Artifacts
-
-- [artifacts/stage0_test_bundle](C:\Users\brind\Documents\New project\artifacts\stage0_test_bundle)
-  Local bundle containing the rollout video, screenshots, metrics, logs, and simulator outputs referenced in the paper draft.
-
-## Recommended Reading Order
-
-1. [Full paper draft](C:\Users\brind\Documents\New project\docs\pi05_alpasim_stage0_full_paper.md)
-2. [Public report](C:\Users\brind\Documents\New project\docs\pi05_alpasim_stage0_public_report.md)
-3. [Publish checklist](C:\Users\brind\Documents\New project\docs\pi05_alpasim_stage0_publish_checklist.md)
-
-## Qualitative Proof
-
-Main rollout video:
-
-- [stage0_same_scene_rollout.mp4](C:\Users\brind\Documents\New project\artifacts\stage0_test_bundle\stage0_same_scene_rollout.mp4)
-
-Extracted frames:
-
-- [stage0_same_scene_frame_01.png](C:\Users\brind\Documents\New project\artifacts\stage0_test_bundle\screenshots\stage0_same_scene_frame_01.png)
-- [stage0_same_scene_frame_02.png](C:\Users\brind\Documents\New project\artifacts\stage0_test_bundle\screenshots\stage0_same_scene_frame_02.png)
-- [stage0_same_scene_frame_03.png](C:\Users\brind\Documents\New project\artifacts\stage0_test_bundle\screenshots\stage0_same_scene_frame_03.png)
-- [stage0_same_scene_frame_04.png](C:\Users\brind\Documents\New project\artifacts\stage0_test_bundle\screenshots\stage0_same_scene_frame_04.png)
-
-## Publication Boundary
-
-This repo currently contains artifacts derived from gated NVIDIA data and simulator scenes.
-
-Before broad public promotion, verify redistribution rights for:
-
-- rollout video
-- screenshots
-- simulator logs
-- ASL traces
-- any gated-data-derived bundle content
-
-## License
-
-MIT License
+- This repo is intentionally transparent about the lost checkpoint and the remaining runtime mismatch.
+- Large raw run bundles are not part of the curated public surface. See [public artifacts](artifacts/public/README.md).

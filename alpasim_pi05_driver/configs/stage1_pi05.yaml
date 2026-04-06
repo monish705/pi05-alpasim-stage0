@@ -1,0 +1,35 @@
+log_level: INFO
+
+model:
+  model_type: pi05_stage1
+  checkpoint_path: /mnt/data/checkpoints/stage1/pi05_stage1_av/pi05_stage1_av/1000
+  device: cuda
+
+host: 0.0.0.0
+port: 6789
+
+inference:
+  use_cameras:
+    - camera_cross_left_120fov
+    - camera_front_wide_120fov
+    - camera_cross_right_120fov
+    - camera_rear_left_70fov
+    - camera_rear_right_70fov
+    - camera_front_tele_30fov
+  max_batch_size: 1
+  subsample_factor: 1
+  context_length: 1
+  output_frequency_hz: 10
+
+route:
+  default_command: 2
+  use_waypoint_commands: true
+  command_distance_threshold: 3.0
+  min_lookahead_distance: 20.0
+
+trajectory_optimizer:
+  enabled: false
+
+output_dir: /mnt/data/stage1_e2e/driver
+
+plot_debug_images: false

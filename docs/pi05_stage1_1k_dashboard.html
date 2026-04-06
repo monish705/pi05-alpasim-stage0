@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PI0.5 AlpaSim Stage 1 1k Dashboard</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #111a2d;
+      --panel-2: #162238;
+      --text: #e7eefb;
+      --muted: #9fb0cf;
+      --accent: #72d7ff;
+      --accent-2: #8ef2c2;
+      --warn: #ffd280;
+      --border: #24324c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(circle at top, #162746 0%, var(--bg) 48%);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .wrap {
+      width: min(1180px, calc(100vw - 40px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+    h1, h2, h3 { margin: 0 0 12px; }
+    h1 { font-size: 36px; line-height: 1.1; }
+    h2 { font-size: 22px; margin-top: 28px; }
+    h3 { font-size: 17px; color: var(--accent); }
+    p { margin: 0 0 12px; color: var(--muted); }
+    code { color: var(--accent-2); }
+    a { color: var(--accent); }
+    .hero, .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 18px 60px rgba(0,0,0,0.22);
+    }
+    .hero p { max-width: 880px; }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(114, 215, 255, 0.08);
+      color: var(--text);
+      font-size: 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 18px;
+      margin-top: 18px;
+    }
+    .span-12 { grid-column: span 12; }
+    .span-8 { grid-column: span 8; }
+    .span-6 { grid-column: span 6; }
+    .span-4 { grid-column: span 4; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .stat {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--panel-2);
+    }
+    .stat .label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .stat .value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+    }
+    .node {
+      flex: 1 1 170px;
+      min-height: 88px;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+    }
+    .arrow {
+      font-size: 28px;
+      color: var(--accent);
+      padding: 0 2px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 10px 8px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th {
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .note {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-left: 3px solid var(--warn);
+      background: rgba(255, 210, 128, 0.08);
+      color: var(--text);
+    }
+    .success {
+      border-left-color: var(--accent-2);
+      background: rgba(142, 242, 194, 0.08);
+    }
+    .artifact-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+    .artifact-list li { margin: 6px 0; }
+    img {
+      max-width: 100%;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      display: block;
+      margin-top: 12px;
+    }
+    @media (max-width: 900px) {
+      .span-8, .span-6, .span-4 { grid-column: span 12; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .arrow { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>PI0.5 AlpaSim Stage 1 1k Dashboard</h1>
+      <p>
+        This page documents the first real Stage 1 run end-to-end up to the saved <code>1000</code> checkpoint:
+        real NVIDIA AV / NuRec clips, real surround-camera BEV preprocessing, real OpenPI JAX LoRA fine-tuning,
+        and a real held-out checkpoint inference test. It does <strong>not</strong> claim a real closed-loop AlpaSim
+        MP4 yet, because the Stage 1 runtime driver path is still not wired on this box.
+      </p>
+      <div class="chips">
+        <div class="chip">Real PI0.5 checkpoint</div>
+        <div class="chip">Real offline BEV</div>
+        <div class="chip">Held-out eval clips</div>
+        <div class="chip">1k checkpoint preserved</div>
+        <div class="chip">No fake Stage 0 fallback path</div>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="label">Dataset Slice</div>
+          <div class="value">12 Clips</div>
+        </div>
+        <div class="stat">
+          <div class="label">Checkpoint</div>
+          <div class="value">1000</div>
+        </div>
+        <div class="stat">
+          <div class="label">Training Time</div>
+          <div class="value">52 min</div>
+        </div>
+        <div class="stat">
+          <div class="label">Best Logged Loss</div>
+          <div class="value">0.0069</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="panel span-12">
+        <h2>Architecture Flow</h2>
+        <div class="flow">
+          <div class="node">
+            <h3>1. Real AV Clips</h3>
+            <p>Official NVIDIA AV / NuRec clips with 7-camera surround rig and labeled maneuvers.</p>
+          </div>
+          <div class="arrow">→</div>
+          <div class="node">
+            <h3>2. Offline BEV</h3>
+            <p>MiDaS depth plus lift-splat style projection into saved memory-mapped BEV tensors.</p>
+          </div>
+          <div class="arrow">→</div>
+          <div class="node">
+            <h3>3. Stage 1 Inputs</h3>
+            <p>BEV image, 30-dim ego-state history, 32×2 route corridor, prompt token.</p>
+          </div>
+          <div class="arrow">→</div>
+          <div class="node">
+            <h3>4. PI0.5 LoRA</h3>
+            <p>OpenPI JAX training using real <code>50 × 32</code> action head with active dims 0–2.</p>
+          </div>
+          <div class="arrow">→</div>
+          <div class="node">
+            <h3>5. 1k Test</h3>
+            <p>Held-out checkpoint inference on eval clips with real BEV and feasible-trajectory rollout summary.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel span-6">
+        <h2>Run Config</h2>
+        <table>
+          <tr><th>Field</th><th>Value</th></tr>
+          <tr><td>Model</td><td><code>pi0.5</code></td></tr>
+          <tr><td>Vision backbone</td><td><code>gemma_2b_lora</code></td></tr>
+          <tr><td>Action expert</td><td><code>gemma_300m_lora</code></td></tr>
+          <tr><td>Action head</td><td><code>50 × 32</code></td></tr>
+          <tr><td>Active dims</td><td><code>delta_s</code>, <code>delta_yaw</code>, <code>target_speed</code></td></tr>
+          <tr><td>Batch size</td><td><code>8</code></td></tr>
+          <tr><td>Workers</td><td><code>8</code></td></tr>
+          <tr><td>LR peak</td><td><code>2.5e-05</code></td></tr>
+          <tr><td>Warmup</td><td><code>1000</code> steps</td></tr>
+          <tr><td>Save interval</td><td><code>500</code></td></tr>
+          <tr><td>Checkpoint tested</td><td><code>/mnt/data/checkpoints/stage1/pi05_stage1_av/pi05_stage1_av/1000</code></td></tr>
+        </table>
+      </section>
+
+      <section class="panel span-6">
+        <h2>Dataset Facts</h2>
+        <table>
+          <tr><th>Field</th><th>Value</th></tr>
+          <tr><td>Repo ID</td><td><code>local/stage1_av_driving</code></td></tr>
+          <tr><td>Dataset root</td><td><code>/mnt/data/datasets/stage1_fast_real_v1</code></td></tr>
+          <tr><td>Dataset size</td><td><code>151 MB</code></td></tr>
+          <tr><td>Train / Eval</td><td><code>9 / 3</code></td></tr>
+          <tr><td>Minimum camera count</td><td><code>6</code></td></tr>
+          <tr><td>Actual eval cameras</td><td><code>7</code> each clip</td></tr>
+          <tr><td>BEV memmaps</td><td><code>109</code> frames per clip</td></tr>
+          <tr><td>Checkpoint size</td><td><code>9.0 GB</code></td></tr>
+        </table>
+      </section>
+
+      <section class="panel span-12">
+        <h2>Loss Curve Snapshots</h2>
+        <p>These values were extracted from the real offline WandB artifact for the <code>1k</code> run.</p>
+        <table>
+          <tr>
+            <th>Step</th><th>Loss</th><th>Grad Norm</th><th>Param Norm</th>
+            <th>Step</th><th>Loss</th><th>Grad Norm</th><th>Param Norm</th>
+          </tr>
+          <tr><td>100</td><td>0.6971</td><td>3.1207</td><td>1803.7703</td><td>550</td><td>0.0173</td><td>0.3522</td><td>1803.7771</td></tr>
+          <tr><td>200</td><td>0.2971</td><td>2.0312</td><td>1803.7709</td><td>650</td><td>0.0142</td><td>0.2791</td><td>1803.7798</td></tr>
+          <tr><td>300</td><td>0.0777</td><td>0.9705</td><td>1803.7728</td><td>750</td><td>0.0109</td><td>0.2696</td><td>1803.7836</td></tr>
+          <tr><td>400</td><td>0.0324</td><td>0.4868</td><td>1803.7736</td><td>850</td><td>0.0082</td><td>0.2115</td><td>1803.7876</td></tr>
+          <tr><td>500</td><td>0.0200</td><td>0.3615</td><td>1803.7759</td><td>900</td><td>0.0069</td><td>0.1976</td><td>1803.7891</td></tr>
+        </table>
+        <div class="note success">
+          The real training run clearly optimized: total loss dropped from <code>0.6971</code> at step <code>100</code> to
+          <code>0.0069</code> by step <code>900</code>.
+        </div>
+      </section>
+
+      <section class="panel span-12">
+        <h2>Held-Out Checkpoint Test</h2>
+        <p>
+          This is a real Stage 1 checkpoint inference test on the three held-out eval clips using the saved
+          <code>1000</code> checkpoint and the actual Stage 1 observation contract.
+        </p>
+        <table>
+          <tr>
+            <th>Clip</th>
+            <th>Maneuver</th>
+            <th>Sample</th>
+            <th>Policy Infer</th>
+            <th>Wall</th>
+            <th>Target Speed Mean</th>
+            <th>Cumulative Yaw</th>
+            <th>Distance XY</th>
+            <th>Clamp Note</th>
+          </tr>
+          <tr>
+            <td><code>0fd2c051...</code></td>
+            <td>lane_follow</td>
+            <td>mid</td>
+            <td>76.92 ms</td>
+            <td>207.31 ms</td>
+            <td>8.89</td>
+            <td>0.102 rad</td>
+            <td>32.50 m</td>
+            <td>22 accel clamps</td>
+          </tr>
+          <tr>
+            <td><code>0fd2c051...</code></td>
+            <td>lane_follow</td>
+            <td>late</td>
+            <td>76.22 ms</td>
+            <td>198.35 ms</td>
+            <td>9.31</td>
+            <td>0.127 rad</td>
+            <td>35.11 m</td>
+            <td>23 accel clamps</td>
+          </tr>
+          <tr>
+            <td><code>f0674f19...</code></td>
+            <td>left_turn</td>
+            <td>late</td>
+            <td>76.19 ms</td>
+            <td>197.66 ms</td>
+            <td>6.02</td>
+            <td>0.260 rad</td>
+            <td>25.52 m</td>
+            <td>10 accel clamps</td>
+          </tr>
+          <tr>
+            <td><code>4bad2f63...</code></td>
+            <td>right_turn</td>
+            <td>mid</td>
+            <td>76.92 ms</td>
+            <td>198.06 ms</td>
+            <td>2.88</td>
+            <td>1.268 rad</td>
+            <td>7.84 m</td>
+            <td>6 accel clamps</td>
+          </tr>
+          <tr>
+            <td><code>4bad2f63...</code></td>
+            <td>right_turn</td>
+            <td>late</td>
+            <td>76.11 ms</td>
+            <td>197.76 ms</td>
+            <td>1.91</td>
+            <td>2.619 rad</td>
+            <td>6.68 m</td>
+            <td>5 accel clamps</td>
+          </tr>
+        </table>
+        <div class="note">
+          The first lane-follow sample incurred a one-time cold-start policy inference of about <code>21.07 s</code>.
+          Warm Stage 1 checkpoint inference then stabilized around <code>76–78 ms</code> policy time and
+          <code>198–233 ms</code> wall time.
+        </div>
+      </section>
+
+      <section class="panel span-8">
+        <h2>Real BEV QA</h2>
+        <p>
+          This QA image came from the real Stage 1 preprocessing run that built the dataset and the tested checkpoint.
+        </p>
+        <img src="../artifacts/stage1_full_bev_qa.png" alt="Stage 1 BEV QA grid" />
+      </section>
+
+      <section class="panel span-4">
+        <h2>Artifacts</h2>
+        <ul class="artifact-list">
+          <li><a href="../artifacts/stage1_checkpoint_1000_eval.json">Held-out checkpoint eval JSON</a></li>
+          <li><a href="./pi05_stage1_1k_training_run.md">1k training run summary</a></li>
+          <li><a href="../artifacts/stage1_full_bev_qa.png">BEV QA image</a></li>
+        </ul>
+        <div class="note">
+          No Stage 1 MP4 is linked here because a real closed-loop AlpaSim Stage 1 runtime path has not been wired on this server yet.
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

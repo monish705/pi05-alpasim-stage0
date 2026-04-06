@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "alpasim_pi05_driver"
 version = "0.1.0"
-description = "PI 0.5 Stage 0 trajectory driver plugin for AlpaSim"
+description = "PI 0.5 Stage 0 and Stage 1 trajectory driver plugins for AlpaSim"
 requires-python = ">=3.11,<3.13"
 dependencies = [
   "alpasim_driver",
@@ -17,6 +17,7 @@ dependencies = [
 
 [project.entry-points."alpasim.models"]
 pi05_stage0 = "alpasim_pi05_driver.pi05_stage0_model:Pi05Stage0Model"
+pi05_stage1 = "alpasim_pi05_driver.pi05_stage1_model:Pi05Stage1Model"
 
 [tool.setuptools.packages.find]
 include = ["alpasim_pi05_driver*"]

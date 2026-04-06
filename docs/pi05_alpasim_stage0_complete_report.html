@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PI0.5 to AlpaSim Stage 0 Report</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121a30;
+      --panel2: #19233f;
+      --text: #edf2ff;
+      --muted: #9fb0d4;
+      --line: #2b3a63;
+      --good: #2fb67b;
+      --warn: #e2a54a;
+      --bad: #ef6262;
+      --blue: #6aa8ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: linear-gradient(180deg, #08101c 0%, #0f1730 100%);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .wrap {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 24px 0 64px;
+    }
+    h1, h2, h3 { margin: 0 0 10px; line-height: 1.2; }
+    h1 { font-size: 34px; }
+    h2 { font-size: 24px; margin-top: 28px; }
+    h3 { font-size: 18px; margin-top: 20px; }
+    p, li { color: var(--text); }
+    .muted { color: var(--muted); }
+    .hero, .card, .panel {
+      background: rgba(18, 26, 48, 0.92);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+    }
+    .hero { padding: 24px; margin-bottom: 20px; }
+    .grid { display: grid; gap: 16px; }
+    .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .card { padding: 16px; }
+    .kpi {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .good { color: var(--good); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+    .blue { color: var(--blue); }
+    .panel { padding: 20px; margin-top: 18px; }
+    .findings {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .finding {
+      padding: 14px 16px;
+      border-left: 4px solid var(--line);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+    }
+    .finding.good { border-left-color: var(--good); }
+    .finding.warn { border-left-color: var(--warn); }
+    .finding.bad { border-left-color: var(--bad); }
+    .finding .title { font-weight: 700; margin-bottom: 4px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+    pre {
+      background: #0a1224;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    a { color: #96c4ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .media-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    video, img {
+      width: 100%;
+      border-radius: 12px;
+      display: block;
+      background: #000;
+    }
+    .path-list li { margin-bottom: 6px; }
+    .small { font-size: 13px; color: var(--muted); }
+    .section-intro { max-width: 950px; color: var(--muted); }
+    @media (max-width: 900px) {
+      .g2, .g3, .g4, .media-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 28px; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <div class="label">Complete HTML Report</div>
+      <h1>Closed-Loop Transfer of PI0.5 to Driving in NVIDIA AlpaSim</h1>
+      <p class="section-intro">
+        This report consolidates the full Stage 0 same-scene transfer run and the official A/B/C/D camera ablation reruns.
+        It uses the actual saved run artifacts: raw per-call traces, raw VLA dumps, rollout metrics, simulator logs, and MP4 videos.
+        The result is a strong systems/integration milestone, but not yet a valid driving-performance claim.
+      </p>
+      <div class="grid g4" style="margin-top:18px">
+        <div class="card">
+          <div class="label">Stage 0 Baseline</div>
+          <div class="kpi blue">1 / 1</div>
+          <div>Completed same-scene closed-loop rollout</div>
+        </div>
+        <div class="card">
+          <div class="label">Policy Calls / Rollout</div>
+          <div class="kpi">101</div>
+          <div>Repeated inference with the fine-tuned policy</div>
+        </div>
+        <div class="card">
+          <div class="label">Best Collision Result</div>
+          <div class="kpi good">0.0</div>
+          <div><code>collision_any_max</code> in A, B, and D</div>
+        </div>
+        <div class="card">
+          <div class="label">Main Limitation</div>
+          <div class="kpi bad">Not grounded</div>
+          <div>A is not better than C or D</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Abstract</h2>
+      <p>
+        We adapted a PI0.5 vision-language-action model, originally configured for robot-action generation, into a custom external
+        driver for NVIDIA AlpaSim. The Stage 0 goal was narrow: verify that a lightly fine-tuned PI0.5 checkpoint can run in closed
+        loop, emit car-compatible actions through a kinematic bridge, and control a vehicle in the simulator on a same-scene route.
+        The baseline same-scene run completed successfully and produced valid video, trace, and metric artifacts. We then ran a four-condition
+        camera ablation with raw per-call dumps: A all cameras live, B front camera only, C all cameras black, and D wrong-scene static override images.
+        The combined evidence shows that the policy is genuinely running and influencing control, but that the current stack is not yet visually
+        grounded enough to support a driving-performance claim.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>System Setup</h2>
+      <div class="grid g2">
+        <div class="card">
+          <h3>Model and Training</h3>
+          <ul>
+            <li>Base model: <code>pi0.5</code></li>
+            <li>Fine-tune mode: LoRA on the PI0.5 JAX stack</li>
+            <li>Checkpoint used for eval: <code>/mnt/data/checkpoints/pi05_stage0_av/pi05_stage0_av/1000</code></li>
+            <li>Native action tensor preserved: <code>50 x 32</code></li>
+            <li>Active dims: <code>delta_s</code>, <code>delta_yaw</code>, <code>target_speed</code></li>
+            <li>Dataset scale: 5 episodes, 545 total frames, 10 Hz</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Simulator Runtime</h3>
+          <ul>
+            <li>AlpaSim external-driver mode on <code>localhost:6789</code></li>
+            <li>Three logical cameras:
+              <code>camera_front_wide_120fov</code>,
+              <code>camera_cross_left_120fov</code>,
+              <code>camera_cross_right_120fov</code>
+            </li>
+            <li>Control timestep: <code>100 ms</code></li>
+            <li>Bridge clamps: acceleration, speed, yaw-rate, lateral acceleration</li>
+            <li>Same-scene eval scene:
+              <code>clipgt-048b974e-1546-488a-b8f9-d32bff77f5aa</code>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Stage 0 Same-Scene Baseline</h2>
+      <p class="section-intro">
+        This was the first end-to-end successful same-scene rollout. It proves the checkpoint loads, the custom driver serves
+        PI0.5 inference repeatedly, and AlpaSim can track the resulting trajectory through a full rollout.
+      </p>
+      <div class="grid g4">
+        <div class="card">
+          <div class="label">Collision</div>
+          <div class="kpi good">0.0</div>
+          <div><code>collision_any</code></div>
+        </div>
+        <div class="card">
+          <div class="label">Offroad</div>
+          <div class="kpi bad">1.0</div>
+          <div><code>offroad</code></div>
+        </div>
+        <div class="card">
+          <div class="label">Wrong Lane</div>
+          <div class="kpi bad">1.0</div>
+          <div><code>wrong_lane</code></div>
+        </div>
+        <div class="card">
+          <div class="label">Progress</div>
+          <div class="kpi blue">0.4772</div>
+          <div><code>progress</code></div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>progress_rel</code></td><td>1.0</td></tr>
+          <tr><td><code>dist_to_gt_trajectory</code></td><td>0.9977501128523617</td></tr>
+          <tr><td><code>dist_to_gt_location</code></td><td>12.51743121959909</td></tr>
+          <tr><td><code>dist_traveled_m</code></td><td>56.191953509330936</td></tr>
+          <tr><td><code>plan_deviation</code></td><td>0.46298382270814414</td></tr>
+          <tr><td>Policy calls</td><td>101</td></tr>
+          <tr><td>Warm policy infer mean</td><td>82.935 ms</td></tr>
+          <tr><td>Warm end-to-end latency mean</td><td>242.696 ms</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <h2>Official A/B/C/D Camera Ablation</h2>
+      <p class="section-intro">
+        These four runs use the same fine-tuned checkpoint and same scene. The only intended change is the visual input condition:
+        A all real, B front-only, C all black, D wrong-scene override images. These are single-rollout ablations, so they support
+        diagnosis, not statistical performance claims.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Condition</th>
+            <th>Visual Input</th>
+            <th>Collision Max</th>
+            <th>Offroad Max</th>
+            <th>Wrong-Lane Max</th>
+            <th>Progress Last</th>
+            <th>Distance Traveled</th>
+            <th>Target Speed First Mean</th>
+            <th>Accel Clamps</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>A</td>
+            <td>All 3 cameras live</td>
+            <td>0.0</td>
+            <td>1.0</td>
+            <td>1.0</td>
+            <td>0.4772283417512127</td>
+            <td>56.191953509330936</td>
+            <td>5.823222</td>
+            <td>559</td>
+          </tr>
+          <tr>
+            <td>B</td>
+            <td>Front live, side cameras black</td>
+            <td>0.0</td>
+            <td>1.0</td>
+            <td>1.0</td>
+            <td>0.4381659182448954</td>
+            <td>51.515687797733406</td>
+            <td>5.111924</td>
+            <td>543</td>
+          </tr>
+          <tr>
+            <td>C</td>
+            <td>All black</td>
+            <td>1.0</td>
+            <td>1.0</td>
+            <td>1.0</td>
+            <td>0.5472957961598665</td>
+            <td>72.06983179771166</td>
+            <td>8.589554</td>
+            <td>1028</td>
+          </tr>
+          <tr>
+            <td>D</td>
+            <td>Wrong-scene static override</td>
+            <td>0.0</td>
+            <td>1.0</td>
+            <td>1.0</td>
+            <td>0.5666577318284498</td>
+            <td>66.89494101556119</td>
+            <td>6.747171</td>
+            <td>715</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="grid g2" style="margin-top:18px">
+        <div class="card">
+          <canvas id="progressChart" height="210"></canvas>
+        </div>
+        <div class="card">
+          <canvas id="speedClampChart" height="210"></canvas>
+        </div>
+      </div>
+      <div class="grid g2" style="margin-top:16px">
+        <div class="card">
+          <canvas id="distanceChart" height="210"></canvas>
+        </div>
+        <div class="card">
+          <canvas id="latencyChart" height="210"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Main Findings</h2>
+      <div class="findings">
+        <div class="finding good">
+          <div class="title">The fine-tuned PI0.5 model is genuinely running in the loop.</div>
+          <div>
+            Every ablation produced 101 policy calls, nontrivial output variation, valid <code>trace.jsonl</code>, and a completed rollout directory with <code>metrics.parquet</code>, <code>rollout.asl</code>, and MP4.
+          </div>
+        </div>
+        <div class="finding bad">
+          <div class="title">The current result is not a vision-grounded driving-performance result.</div>
+          <div>
+            Condition A is not stronger than C or D on the key route-progress metric. In fact, all-black C and wrong-scene D both exceed A on <code>progress_last</code>. That means the current stack is still too route/bridge/controller dominated to claim robust perception-grounded driving.
+          </div>
+        </div>
+        <div class="finding warn">
+          <div class="title">Vision is affecting the policy, but not in the way you ultimately need.</div>
+          <div>
+            The clearest signal is speed regulation. All-black C raises <code>target_speed_first_mean</code> to 8.589554 m/s and doubles accel-clamp pressure to 1028. So the visual pathway is not dead. It appears to modulate speed/confidence more than it provides reliable turn-disambiguation.
+          </div>
+        </div>
+        <div class="finding warn">
+          <div class="title">The bridge is still rescuing the model heavily.</div>
+          <div>
+            Acceleration clamp totals remain high in every condition: A 559, B 543, C 1028, D 715. That means the policy often emits speed profiles that need feasibility correction before the controller can track them.
+          </div>
+        </div>
+        <div class="finding bad">
+          <div class="title">Latency remains too high for a clean 10 Hz closed loop.</div>
+          <div>
+            Warm end-to-end latency is around 243–250 ms, while the control timestep is 100 ms. The model may be reasonable, but the controller is still acting on stale information.
+          </div>
+        </div>
+        <div class="finding warn">
+          <div class="title">The offroad metric is still contaminated.</div>
+          <div>
+            Offroad remains 1.0 across all conditions. That means the spawn/eval issue is still unresolved and you should not use offroad as your primary comparative metric yet.
+          </div>
+        </div>
+        <div class="finding warn">
+          <div class="title">Condition C is prompt-confounded.</div>
+          <div>
+            C includes <code>left_turn</code> in its prompt set while A, B, and D only show <code>lane_follow</code> and <code>right_turn</code>. That makes yaw comparisons with C less clean than the speed/clamp comparisons.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Claim Boundary</h2>
+      <div class="grid g2">
+        <div class="card">
+          <h3 class="good">What you can honestly claim now</h3>
+          <ul>
+            <li>PI0.5 can be fine-tuned and run as a custom AlpaSim external driver.</li>
+            <li>The model can execute repeated closed-loop inference and complete simulator rollouts.</li>
+            <li>Raw per-call VLA inputs and outputs can be captured and inspected.</li>
+            <li>The current stack exposes a clear next bottleneck: vision grounding.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 class="bad">What you cannot claim yet</h3>
+          <ul>
+            <li>Strong driving performance.</li>
+            <li>Vision-grounded route following.</li>
+            <li>Generalization beyond this narrow scene family.</li>
+            <li>Superiority over a driving-native baseline.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Recommended Next Step</h2>
+      <ol>
+        <li>Fix the spawn/offroad evaluation contamination so offroad becomes usable.</li>
+        <li>Repeat A/B/C/D with identical prompt sets, especially for C.</li>
+        <li>Run at least 5 rollouts per condition to report mean and standard deviation.</li>
+        <li>Reduce route dominance and bridge dependence before making any performance claim.</li>
+        <li>Add a held-out same-domain scene and a simple driving-native baseline.</li>
+      </ol>
+    </section>
+
+    <section class="panel">
+      <h2>Evidence Media</h2>
+      <h3>Stage 0 Screenshots</h3>
+      <div class="media-grid">
+        <div class="media-card">
+          <img src="../artifacts/stage0_test_bundle/screenshots/stage0_same_scene_frame_01.png" alt="Stage 0 frame 1">
+        </div>
+        <div class="media-card">
+          <img src="../artifacts/stage0_test_bundle/screenshots/stage0_same_scene_frame_02.png" alt="Stage 0 frame 2">
+        </div>
+        <div class="media-card">
+          <img src="../artifacts/stage0_test_bundle/screenshots/stage0_same_scene_frame_03.png" alt="Stage 0 frame 3">
+        </div>
+        <div class="media-card">
+          <img src="../artifacts/stage0_test_bundle/screenshots/stage0_same_scene_frame_04.png" alt="Stage 0 frame 4">
+        </div>
+      </div>
+
+      <h3 style="margin-top:22px">A/B/C/D Rollout Videos</h3>
+      <div class="media-grid">
+        <div class="media-card">
+          <div class="label">A All Real</div>
+          <video controls preload="metadata" src="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation_A/rollouts/clipgt-048b974e-1546-488a-b8f9-d32bff77f5aa/a6de1494-2c0d-11f1-921d-6d75cf3f625d/clipgt-clipgt-048b974e-1546-488a-b8f9-d32bff77f5aa_0_a6de1494-2c0d-11f1-921d-6d75cf3f625d_camera_front_wide_120fov_default.mp4"></video>
+        </div>
+        <div class="media-card">
+          <div class="label">B Front Only</div>
+          <video controls preload="metadata" src="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation_B/rollouts/clipgt-048b974e-1546-488a-b8f9-d32bff77f5aa/42f5f4be-2c0e-11f1-9ed0-75eb29627ade/clipgt-clipgt-048b974e-1546-488a-b8f9-d32bff77f5aa_0_42f5f4be-2c0e-11f1-9ed0-75eb29627ade_camera_front_wide_120fov_default.mp4"></video>
+        </div>
+        <div class="media-card">
+          <div class="label">C All Black</div>
+          <video controls preload="metadata" src="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation_C/rollouts/clipgt-048b974e-1546-488a-b8f9-d32bff77f5aa/c1376ec0-2c0e-11f1-8627-57546973b526/clipgt-clipgt-048b974e-1546-488a-b8f9-d32bff77f5aa_0_c1376ec0-2c0e-11f1-8627-57546973b526_camera_front_wide_120fov_default.mp4"></video>
+        </div>
+        <div class="media-card">
+          <div class="label">D Wrong-Scene Override</div>
+          <video controls preload="metadata" src="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation_D/rollouts/clipgt-048b974e-1546-488a-b8f9-d32bff77f5aa/37fab152-2c0f-11f1-b41b-0f7befa278d9/clipgt-clipgt-048b974e-1546-488a-b8f9-d32bff77f5aa_0_37fab152-2c0f-11f1-b41b-0f7befa278d9_camera_front_wide_120fov_default.mp4"></video>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Artifact Index</h2>
+      <p class="small">Most important local files used for this report:</p>
+      <ul class="path-list">
+        <li><a href="../artifacts/stage0_test_bundle/RUN_METRICS_SUMMARY.txt">Stage 0 baseline metric summary</a></li>
+        <li><a href="../artifacts/stage0_test_bundle/stage0_same_scene_rollout.mp4">Stage 0 same-scene rollout video</a></li>
+        <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/A/RERUN_SUMMARY.txt">A rerun summary</a></li>
+        <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/B/RERUN_SUMMARY.txt">B rerun summary</a></li>
+        <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/C/RERUN_SUMMARY.txt">C rerun summary</a></li>
+        <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/D/RERUN_SUMMARY.txt">D rerun summary</a></li>
+        <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/A/trace.jsonl">A raw trace</a></li>
+        <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/B/trace.jsonl">B raw trace</a></li>
+        <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/C/trace.jsonl">C raw trace</a></li>
+        <li><a href="../artifacts/stage0_ablation_run_only/pi05_stage0_ablation_20260330/stage0_ablation/D/trace.jsonl">D raw trace</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <script>
+    const labels = ['A all real', 'B front only', 'C all black', 'D override'];
+    const progress = [0.4772283417512127, 0.4381659182448954, 0.5472957961598665, 0.5666577318284498];
+    const distance = [56.191953509330936, 51.515687797733406, 72.06983179771166, 66.89494101556119];
+    const speed = [5.823222, 5.111924, 8.589554, 6.747171];
+    const clamps = [559, 543, 1028, 715];
+    const latencyWarm = [242.696, 249.152, 249.718, 250.148];
+    const policyWarm = [82.935, 83.269, 82.986, 82.934];
+
+    const baseOpts = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#edf2ff' } }
+      },
+      scales: {
+        x: { ticks: { color: '#edf2ff' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+        y: { ticks: { color: '#edf2ff' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+      }
+    };
+
+    new Chart(document.getElementById('progressChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Progress Last', data: progress, backgroundColor: ['#6aa8ff', '#2fb67b', '#ef6262', '#e2a54a'] }
+        ]
+      },
+      options: baseOpts
+    });
+
+    new Chart(document.getElementById('speedClampChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Target Speed First Mean (m/s)', data: speed, backgroundColor: '#6aa8ff' },
+          { label: 'Accel Clamps', data: clamps, backgroundColor: '#ef6262', yAxisID: 'y1' }
+        ]
+      },
+      options: {
+        ...baseOpts,
+        scales: {
+          x: baseOpts.scales.x,
+          y: { ...baseOpts.scales.y, title: { display: true, text: 'm/s', color: '#edf2ff' } },
+          y1: {
+            position: 'right',
+            ticks: { color: '#edf2ff' },
+            grid: { drawOnChartArea: false, color: 'rgba(255,255,255,0.06)' },
+            title: { display: true, text: 'clamps', color: '#edf2ff' }
+          }
+        }
+      }
+    });
+
+    new Chart(document.getElementById('distanceChart'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ label: 'Distance Traveled (m)', data: distance, backgroundColor: ['#6aa8ff', '#2fb67b', '#ef6262', '#e2a54a'] }]
+      },
+      options: baseOpts
+    });
+
+    new Chart(document.getElementById('latencyChart'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Warm end-to-end latency (ms)', data: latencyWarm, borderColor: '#e2a54a', backgroundColor: '#e2a54a', tension: 0.25 },
+          { label: 'Warm policy infer (ms)', data: policyWarm, borderColor: '#6aa8ff', backgroundColor: '#6aa8ff', tension: 0.25 }
+        ]
+      },
+      options: baseOpts
+    });
+  </script>
+</body>
+</html>
